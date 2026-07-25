@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../config/api_config.dart';
 import 'ai_chat_page.dart';
 import 'operation_plan_page.dart';
+import 'settings_page.dart';
 import 'stock_list_page.dart';
 import 'trading_record_page.dart';
 
@@ -23,7 +23,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     const AiChatPage(),
     const TradingRecordPage(),
     const OperationPlanPage(),
-    const _SettingsPlaceholder(),
+    const SettingsPage(),
   ];
 
   @override
@@ -80,44 +80,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _SettingsPlaceholder extends StatelessWidget {
-  const _SettingsPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const SizedBox(height: 40),
-        Center(
-          child: Column(
-            children: [
-              Icon(Icons.account_balance, size: 64, color: Colors.grey[400]),
-              const SizedBox(height: 16),
-              Text('go-stock Mobile',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 4),
-              const Text('v1.0.0',
-                  style: TextStyle(color: Colors.grey, fontSize: 13)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 40),
-        ListTile(
-          leading: const Icon(Icons.api),
-          title: const Text('API 地址'),
-          subtitle: Text(ApiConfig.baseUrl),
-        ),
-        const ListTile(
-          leading: Icon(Icons.info_outline),
-          title: Text('关于'),
-          subtitle: Text('AI 赋能股票分析'),
-        ),
-      ],
     );
   }
 }

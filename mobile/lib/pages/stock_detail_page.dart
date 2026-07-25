@@ -1,5 +1,9 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+
+import '../api/api_client.dart';
 import '../api/stock_api.dart';
 import '../models/kline_data.dart';
 import '../models/minute_data.dart';
@@ -49,6 +53,11 @@ class _StockDetailPageState extends State<StockDetailPage>
   // 技术指标
   IndicatorType _indicatorType = IndicatorType.none;
 
+  // F10 财务数据
+  String _financeMarkdown = '';
+  bool _financeLoading = false;
+  bool _financeLoaded = false;
+
   final List<_KLineTypeOption> _klineTypes = [
     _KLineTypeOption('日K', '101'),
     _KLineTypeOption('周K', '102'),
@@ -88,6 +97,9 @@ class _StockDetailPageState extends State<StockDetailPage>
           break;
         case 1: // 分时
           if (_minuteData.isEmpty) _fetchMinuteData();
+          break;
+        case 2: // 详情
+          if (!_financeLoaded) _fetchF10Data();
           break;
       }
     }
@@ -175,6 +187,34 @@ class _StockDetailPageState extends State<StockDetailPage>
         setState(() => _stock = realTime);
       }
     } catch (_) {}
+  }
+
+  Future<void> _fetchF10Data() async {
+    if (_financeLoading || _financeLoaded) return;
+    setState(() => _financeLoading = true);
+    try {
+      final resp = await ApiClient().get(
+        '/f10/latest-finance',
+        params: {'stockCode': _stock.stockCode},
+      );
+      if (mounted) {
+        setState(() {
+          _financeMarkdown = resp.isSuccess && resp.data != null
+              ? (resp.data['markdown'] ?? '').toString()
+              : '';
+          _financeLoaded = true;
+          _financeLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _financeMarkdown = '获取财务数据失败: $e';
+          _financeLoaded = true;
+          _financeLoading = false;
+        });
+      }
+    }
   }
 
   void _onKLineTypeChanged(String type) {

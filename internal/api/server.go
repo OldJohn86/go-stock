@@ -69,6 +69,15 @@ func StartServer(addr string) {
 			plan.POST("/delete/:id", HandleDeleteDailyOperationPlan)
 			plan.POST("/status", HandleUpdateDailyOperationPlanStatus)
 		}
+
+		// 设置
+		settings := v1.Group("/settings")
+		{
+			settings.GET("", HandleGetSettings)
+			settings.GET("/ai-configs", HandleGetAiConfigs)
+			settings.GET("/fetch-models", HandleFetchAiModels)
+			settings.GET("/test-connection", HandleTestAiConnection)
+		}
 	}
 
 	logger.SugaredLogger.Infof("API server listening on %s", addr)
