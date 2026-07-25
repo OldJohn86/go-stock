@@ -637,12 +637,12 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
                         ),
                         a: TextStyle(color: colorScheme.primary),
                         code: TextStyle(
-                          backgroundColor: Colors.grey.withValues(alpha: 0.1),
+                          backgroundColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
                           fontFamily: 'monospace',
                           fontSize: 13,
                         ),
                         codeblockDecoration: BoxDecoration(
-                          color: Colors.grey.withValues(alpha: 0.05),
+                          color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         listBullet: TextStyle(color: colorScheme.onSurface),
@@ -717,15 +717,15 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
         MarkdownBody(
           data: msg.content,
           styleSheet: MarkdownStyleSheet(
-            p: const TextStyle(
+            p: TextStyle(
               fontSize: 15,
               height: 1.45,
-              color: Colors.white,
+              color: colorScheme.onSurface,
             ),
           ),
         ),
         const SizedBox(height: 4),
-        _TypingIndicator(),
+        _TypingIndicator(color: colorScheme.onSurface),
       ],
     );
   }
@@ -733,6 +733,10 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
 /// Animated typing indicator (three bouncing dots)
 class _TypingIndicator extends StatefulWidget {
+  final Color? color;
+
+  const _TypingIndicator({this.color});
+
   @override
   State<_TypingIndicator> createState() => _TypingIndicatorState();
 }
@@ -758,6 +762,7 @@ class _TypingIndicatorState extends State<_TypingIndicator>
 
   @override
   Widget build(BuildContext context) {
+    final dotColor = widget.color ?? Colors.white70;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
@@ -773,8 +778,8 @@ class _TypingIndicatorState extends State<_TypingIndicator>
               child: Container(
                 width: size,
                 height: size,
-                decoration: const BoxDecoration(
-                  color: Colors.white70,
+                decoration: BoxDecoration(
+                  color: dotColor,
                   shape: BoxShape.circle,
                 ),
               ),

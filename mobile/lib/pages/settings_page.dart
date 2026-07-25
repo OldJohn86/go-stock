@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_client.dart';
 import '../config/api_config.dart';
+import '../providers/theme_provider.dart';
 
 /// 设置页
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage> {
+class _SettingsPageState extends ConsumerState<SettingsPage> {
   final _baseUrlController = TextEditingController();
   final _apiKeyController = TextEditingController();
 
@@ -113,6 +115,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: const TextStyle(fontSize: 12),
               ),
             ),
+          ]),
+
+          const SizedBox(height: 16),
+
+          // Theme Mode Selector
+          _buildSection('主题模式', [
+            _buildThemeModeTile(),
           ]),
 
           const SizedBox(height: 16),
@@ -231,6 +240,53 @@ class _SettingsPageState extends State<SettingsPage> {
             else
               ..._aiConfigs.map((cfg) => _buildAiConfigCard(cfg)),
           ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeModeTile() {
+    final theme = Theme.of(context);
+    final currentMode = ref.watch(themeModeProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Text(
+              '选择主题',
+              style: TextStyle(
+                fontSize: 13,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          SegmentedButton<ThemeMode>(
+            segments: const [
+              ButtonSegment(
+                value: ThemeMode.light,
+                icon: Icon(Icons.light_mode),
+                label: Text('浅色'),
+              ),
+              ButtonSegment(
+                value: ThemeMode.dark,
+                icon: Icon(Icons.dark_mode),
+                label: Text('深色'),
+              ),
+              ButtonSegment(
+                value: ThemeMode.system,
+                icon: Icon(Icons.settings_brightness),
+                label: Text('跟随系统'),
+              ),
+            ],
+            selected: {currentMode},
+            onSelectionChanged: (selected) {
+              ref.read(themeModeProvider.notifier).setThemeMode(selected.first);
+            },
+          ),
         ],
       ),
     );

@@ -192,7 +192,7 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
@@ -221,7 +221,7 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
                 ),
               ),
               const SizedBox(width: 10),
-              Text('总盈亏', style: theme.textTheme.titleSmall?.copyWith(color: Colors.grey[600])),
+              Text('总盈亏', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               const SizedBox(width: 6),
               Text(
                 _formatMoney(s.totalProfit),

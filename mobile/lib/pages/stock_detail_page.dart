@@ -41,11 +41,13 @@ class _StockDetailPageState extends State<StockDetailPage>
   List<KLineData> _klineData = [];
   bool _klineLoading = false;
   String _klineType = '101'; // 101=日K
+  String? _klineError;
 
   // 分时数据
   List<MinuteData> _minuteData = [];
   String _minuteDate = '';
   bool _minuteLoading = false;
+  String? _minuteError;
 
   // 价格信息（更新用）
   late StockRealTime _stock;
@@ -57,6 +59,7 @@ class _StockDetailPageState extends State<StockDetailPage>
   String _financeMarkdown = '';
   bool _financeLoading = false;
   bool _financeLoaded = false;
+  String? _financeError;
 
   final List<_KLineTypeOption> _klineTypes = [
     _KLineTypeOption('日K', '101'),
@@ -106,10 +109,12 @@ class _StockDetailPageState extends State<StockDetailPage>
   }
 
   Future<void> _fetchKLineData() async {
-    setState(() => _klineLoading = true);
+    setState(() {
+      _klineLoading = true;
+      _klineError = null;
+    });
     try {
-      final data =
-          await _api.getKLineData(_stock.stockCode, type: _klineType);
+      final data = await _api.getKLineData(_stock.stockCode, type: _klineType);
       if (mounted) {
         setState(() {
           _klineData = data;
@@ -118,13 +123,20 @@ class _StockDetailPageState extends State<StockDetailPage>
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _klineLoading = false);
+        setState(() {
+          _klineLoading = false;
+          _klineError =
+              '加载K线数据失败: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e.toString()}';
+        });
       }
     }
   }
 
   Future<void> _fetchMinuteData() async {
-    setState(() => _minuteLoading = true);
+    setState(() {
+      _minuteLoading = true;
+      _minuteError = null;
+    });
     try {
       final result = await _api.getMinuteData(_stock.stockCode);
       if (mounted) {
@@ -136,7 +148,10 @@ class _StockDetailPageState extends State<StockDetailPage>
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _minuteLoading = false);
+        setState(() {
+          _minuteLoading = false;
+          _minuteError = '加载分时数据失败';
+        });
       }
     }
   }
@@ -162,9 +177,9 @@ class _StockDetailPageState extends State<StockDetailPage>
       if (mounted) {
         setState(() => _isFollowed = false);
         if (msg.contains('成功')) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('已取消关注')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('已取消关注')));
         }
       }
     } else {
@@ -172,9 +187,9 @@ class _StockDetailPageState extends State<StockDetailPage>
       if (mounted) {
         setState(() => _isFollowed = true);
         if (msg.contains('成功')) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('已添加自选')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('已添加自选')));
         }
       }
     }
@@ -191,7 +206,10 @@ class _StockDetailPageState extends State<StockDetailPage>
 
   Future<void> _fetchF10Data() async {
     if (_financeLoading || _financeLoaded) return;
-    setState(() => _financeLoading = true);
+    setState(() {
+      _financeLoading = true;
+      _financeError = null;
+    });
     try {
       final resp = await ApiClient().get(
         '/f10/latest-finance',
@@ -212,6 +230,7 @@ class _StockDetailPageState extends State<StockDetailPage>
           _financeMarkdown = '获取财务数据失败: $e';
           _financeLoaded = true;
           _financeLoading = false;
+          _financeError = '加载财务数据失败';
         });
       }
     }
@@ -222,6 +241,7 @@ class _StockDetailPageState extends State<StockDetailPage>
     setState(() {
       _klineType = type;
       _klineData = [];
+      _klineError = null;
       _indicatorType = IndicatorType.none;
     });
     _fetchKLineData();
@@ -278,16 +298,14 @@ class _StockDetailPageState extends State<StockDetailPage>
                     PriceChange(
                       change: _stock.change,
                       changePercent: _stock.changePercent,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontSize: 14,
-                      ),
+                      style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
                     ),
                   ],
                 ),
                 const Spacer(),
                 Text(
                   _stock.stockCode,
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ],
             ),
@@ -302,7 +320,7 @@ class _StockDetailPageState extends State<StockDetailPage>
             child: TabBar(
               controller: _tabController,
               labelColor: theme.colorScheme.primary,
-              unselectedLabelColor: Colors.grey,
+              unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
               tabs: const [
                 Tab(text: 'K线'),
                 Tab(text: '分时'),
@@ -326,6 +344,57 @@ class _StockDetailPageState extends State<StockDetailPage>
     );
   }
 
+  Widget _buildErrorTab(String title, String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              textAlign: TextAlign.center,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              onPressed: _onRefreshCurrentTab,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('重试'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onRefreshCurrentTab() async {
+    switch (_tabController.index) {
+      case 0:
+        _klineError = null;
+        _klineData = [];
+        await _fetchKLineData();
+        break;
+      case 1:
+        _minuteError = null;
+        _minuteData = [];
+        await _fetchMinuteData();
+        break;
+      case 2:
+        _financeError = null;
+        _financeLoaded = false;
+        _financeMarkdown = '';
+        await _fetchF10Data();
+        break;
+    }
+  }
+
   Widget _buildKLineTab(BuildContext context) {
     return Column(
       children: [
@@ -344,12 +413,14 @@ class _StockDetailPageState extends State<StockDetailPage>
                     opt.label,
                     style: TextStyle(
                       fontSize: 12,
-                      color: selected ? Colors.white : Colors.grey[700],
+                      color: selected ? Colors.white : null,
                     ),
                   ),
                   selected: selected,
                   selectedColor: Theme.of(context).colorScheme.primary,
-                  backgroundColor: Colors.grey[100],
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
                   visualDensity: VisualDensity.compact,
                   onSelected: (_) => _onKLineTypeChanged(opt.type),
                 ),
@@ -378,23 +449,28 @@ class _StockDetailPageState extends State<StockDetailPage>
         Expanded(
           child: _klineLoading
               ? const Center(child: CircularProgressIndicator())
+              : _klineError != null
+              ? _buildErrorTab('K线数据加载失败', _klineError!)
               : _klineData.isEmpty
-                  ? const Center(child: Text('暂无K线数据'))
-                  : Column(
-                      children: [
-                        const SizedBox(height: 4),
-                        const KLineLegend(),
-                        Expanded(
-                          child: KLineChart(data: _klineData, height: double.infinity),
-                        ),
-                        if (_indicatorType != IndicatorType.none)
-                          IndicatorChart(
-                            data: _klineData,
-                            type: _indicatorType,
-                            height: 110,
-                          ),
-                      ],
+              ? const Center(child: Text('暂无K线数据'))
+              : Column(
+                  children: [
+                    const SizedBox(height: 4),
+                    const KLineLegend(),
+                    Expanded(
+                      child: KLineChart(
+                        data: _klineData,
+                        height: double.infinity,
+                      ),
                     ),
+                    if (_indicatorType != IndicatorType.none)
+                      IndicatorChart(
+                        data: _klineData,
+                        type: _indicatorType,
+                        height: 110,
+                      ),
+                  ],
+                ),
         ),
       ],
     );
@@ -403,10 +479,13 @@ class _StockDetailPageState extends State<StockDetailPage>
   Widget _indicatorChip(String label, IndicatorType type) {
     final selected = _indicatorType == type;
     return ChoiceChip(
-      label: Text(label, style: TextStyle(fontSize: 12, color: selected ? Colors.white : Colors.grey[700])),
+      label: Text(
+        label,
+        style: TextStyle(fontSize: 12, color: selected ? Colors.white : null),
+      ),
       selected: selected,
       selectedColor: Theme.of(context).colorScheme.primary,
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       visualDensity: VisualDensity.compact,
       onSelected: (_) => setState(() => _indicatorType = type),
     );
@@ -415,89 +494,147 @@ class _StockDetailPageState extends State<StockDetailPage>
   Widget _buildMinuteTab(BuildContext context) {
     return _minuteLoading
         ? const Center(child: CircularProgressIndicator())
+        : _minuteError != null
+        ? _buildErrorTab('分时数据加载失败', _minuteError!)
         : _minuteData.isEmpty
-            ? const Center(child: Text('暂无分时数据'))
-            : MinuteChart(
-                data: _minuteData,
-                date: _minuteDate,
-                preClose: _stock.preClose,
-                height: double.infinity,
-              );
+        ? const Center(child: Text('暂无分时数据'))
+        : MinuteChart(
+            data: _minuteData,
+            date: _minuteDate,
+            preClose: _stock.preClose,
+            height: double.infinity,
+          );
   }
 
   Widget _buildDetailTab(BuildContext context) {
     final theme = Theme.of(context);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('基本信息',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-                _infoRow(theme, '今开', _stock.open.toStringAsFixed(2)),
-                _infoRow(theme, '昨收', _stock.preClose.toStringAsFixed(2)),
-                _infoRow(theme, '最高', _stock.high.toStringAsFixed(2)),
-                _infoRow(theme, '最低', _stock.low.toStringAsFixed(2)),
-                _infoRow(theme, '日期', _stock.date),
-                _infoRow(theme, '时间', _stock.time),
-              ],
+    if (_financeError != null && _financeMarkdown.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text('加载失败', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Text(
+              _financeError!,
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
-          ),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              onPressed: () {
+                setState(() {
+                  _financeError = null;
+                  _financeLoaded = false;
+                  _financeMarkdown = '';
+                });
+                _fetchF10Data();
+              },
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('重试'),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-        if (_financeLoading)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(30),
-              child: CircularProgressIndicator(),
-            ),
-          )
-        else if (_financeMarkdown.isNotEmpty)
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {
+          _financeError = null;
+          _financeLoaded = false;
+          _financeMarkdown = '';
+        });
+        await _fetchF10Data();
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
           Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
+              side: BorderSide(
+                color: theme.colorScheme.outline.withValues(alpha: 0.15),
+              ),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('财务数据 (F10)',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 12),
-                  MarkdownBody(
-                    data: _financeMarkdown,
-                    styleSheet: MarkdownStyleSheet(
-                      p: theme.textTheme.bodySmall?.copyWith(height: 1.6),
-                      tableHead: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary),
-                      tableBody: theme.textTheme.bodySmall?.copyWith(
-                          height: 1.5),
-                      tableBorder: TableBorder.all(
-                          color: Colors.grey.withValues(alpha: 0.2)),
+                  Text(
+                    '基本信息',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  _infoRow(theme, '今开', _stock.open.toStringAsFixed(2)),
+                  _infoRow(theme, '昨收', _stock.preClose.toStringAsFixed(2)),
+                  _infoRow(theme, '最高', _stock.high.toStringAsFixed(2)),
+                  _infoRow(theme, '最低', _stock.low.toStringAsFixed(2)),
+                  _infoRow(theme, '日期', _stock.date),
+                  _infoRow(theme, '时间', _stock.time),
                 ],
               ),
             ),
           ),
-      ],
+          const SizedBox(height: 16),
+          if (_financeLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(30),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else if (_financeMarkdown.isNotEmpty)
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.15),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '财务数据 (F10)',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    MarkdownBody(
+                      data: _financeMarkdown,
+                      styleSheet: MarkdownStyleSheet(
+                        p: theme.textTheme.bodySmall?.copyWith(height: 1.6),
+                        tableHead: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                        tableBody: theme.textTheme.bodySmall?.copyWith(
+                          height: 1.5,
+                        ),
+                        tableBorder: TableBorder.all(
+                          color: theme.colorScheme.outline.withValues(
+                            alpha: 0.2,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -507,7 +644,10 @@ class _StockDetailPageState extends State<StockDetailPage>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600])),
+          Text(
+            label,
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+          ),
           Text(value, style: theme.textTheme.bodyLarge),
         ],
       ),

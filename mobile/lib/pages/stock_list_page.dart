@@ -21,6 +21,7 @@ class _StockListPageState extends ConsumerState<StockListPage> {
   // 全市场数据
   List<StockRealTime> _marketStocks = [];
   bool _marketLoading = false;
+  String? _marketError;
   int _page = 1;
   final _searchController = TextEditingController();
 
@@ -38,7 +39,10 @@ class _StockListPageState extends ConsumerState<StockListPage> {
 
   Future<void> _fetchMarketStocks({bool loadMore = false}) async {
     if (!loadMore) {
-      setState(() => _marketLoading = true);
+      setState(() {
+        _marketLoading = true;
+        _marketError = null;
+      });
     }
     try {
       final api = StockApi();
@@ -60,7 +64,14 @@ class _StockListPageState extends ConsumerState<StockListPage> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _marketLoading = false);
+      if (mounted) {
+        setState(() {
+          _marketLoading = false;
+          if (!loadMore) {
+            _marketError = '数据加载失败，请检查网络后重试';
+          }
+        });
+      }
     }
   }
 
@@ -167,11 +178,11 @@ class _StockListPageState extends ConsumerState<StockListPage> {
             decoration: InputDecoration(
               hintText: '搜索股票名称',
               filled: true,
-              fillColor: Colors.grey.withValues(alpha: 0.07),
-              prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[500]),
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              prefixIcon: Icon(Icons.search, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
-                      icon: Icon(Icons.clear, size: 18, color: Colors.grey[500]),
+                      icon: Icon(Icons.clear, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       onPressed: () {
                         _searchController.clear();
                         _fetchMarketStocks();
@@ -187,7 +198,7 @@ class _StockListPageState extends ConsumerState<StockListPage> {
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(24),
@@ -201,7 +212,9 @@ class _StockListPageState extends ConsumerState<StockListPage> {
         Expanded(
           child: _marketLoading && _marketStocks.isEmpty
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
+              : _marketError != null && _marketStocks.isEmpty
+                  ? _buildError(ref, _marketError!, isFollow: false)
+                  : RefreshIndicator(
                   onRefresh: () => _fetchMarketStocks(),
                   child: _marketStocks.isEmpty
                       ? _buildEmpty(

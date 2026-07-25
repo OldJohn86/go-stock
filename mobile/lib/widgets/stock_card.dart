@@ -60,7 +60,10 @@ class StockCard extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       stock.stockCode,
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),

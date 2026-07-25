@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../widgets/network_error_banner.dart';
 import 'ai_chat_page.dart';
 import 'operation_plan_page.dart';
 import 'settings_page.dart';
@@ -31,20 +32,27 @@ class _HomePageState extends ConsumerState<HomePage> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        switchInCurve: Curves.easeInOut,
-        switchOutCurve: Curves.easeInOut,
-        transitionBuilder: (child, animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
-        },
-        child: KeyedSubtree(
-          key: ValueKey(_currentIndex),
-          child: _pages[_currentIndex],
-        ),
+      body: Column(
+        children: [
+          const NetworkErrorBanner(),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              switchInCurve: Curves.easeInOut,
+              switchOutCurve: Curves.easeInOut,
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+              child: KeyedSubtree(
+                key: ValueKey(_currentIndex),
+                child: _pages[_currentIndex],
+              ),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
