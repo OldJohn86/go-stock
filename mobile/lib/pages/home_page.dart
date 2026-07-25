@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/api_config.dart';
+import 'ai_chat_page.dart';
+import 'operation_plan_page.dart';
 import 'stock_list_page.dart';
+import 'trading_record_page.dart';
 
 /// 主页 — 底部 Tab 导航
 class HomePage extends ConsumerStatefulWidget {
@@ -16,57 +20,64 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   final _pages = <Widget>[
     const StockListPage(),
-    const _AiChatPlaceholder(),
+    const AiChatPage(),
+    const TradingRecordPage(),
+    const OperationPlanPage(),
     const _SettingsPlaceholder(),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 250),
+        switchInCurve: Curves.easeInOut,
+        switchOutCurve: Curves.easeInOut,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey(_currentIndex),
+          child: _pages[_currentIndex],
+        ),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (i) => setState(() => _currentIndex = i),
-        destinations: const [
+        elevation: 8,
+        shadowColor: Colors.black.withValues(alpha: 0.15),
+        indicatorColor: colorScheme.primaryContainer,
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.show_chart),
-            selectedIcon: Icon(Icons.show_chart, color: Colors.blue),
+            icon: Icon(Icons.show_chart_outlined, color: Colors.grey[500]),
+            selectedIcon: Icon(Icons.show_chart, color: colorScheme.primary),
             label: '行情',
           ),
           NavigationDestination(
-            icon: Icon(Icons.smart_toy_outlined),
-            selectedIcon: Icon(Icons.smart_toy, color: Colors.blue),
+            icon: Icon(Icons.smart_toy_outlined, color: Colors.grey[500]),
+            selectedIcon: Icon(Icons.smart_toy, color: colorScheme.primary),
             label: 'AI',
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings, color: Colors.blue),
+            icon: Icon(Icons.receipt_long_outlined, color: Colors.grey[500]),
+            selectedIcon: Icon(Icons.receipt_long, color: colorScheme.primary),
+            label: '交易',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.assignment_outlined, color: Colors.grey[500]),
+            selectedIcon: Icon(Icons.assignment, color: colorScheme.primary),
+            label: '计划',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined, color: Colors.grey[500]),
+            selectedIcon: Icon(Icons.settings, color: colorScheme.primary),
             label: '设置',
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AiChatPlaceholder extends StatelessWidget {
-  const _AiChatPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.smart_toy, size: 64, color: Colors.grey),
-          SizedBox(height: 16),
-          Text('AI 分析', style: TextStyle(fontSize: 18)),
-          SizedBox(height: 8),
-          Text('即将上线，敬请期待',
-              style: TextStyle(color: Colors.grey, fontSize: 13)),
         ],
       ),
     );
@@ -96,10 +107,10 @@ class _SettingsPlaceholder extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 40),
-        const ListTile(
-          leading: Icon(Icons.api),
-          title: Text('API 地址'),
-          subtitle: Text('http://10.0.2.2:8080'),
+        ListTile(
+          leading: const Icon(Icons.api),
+          title: const Text('API 地址'),
+          subtitle: Text(ApiConfig.baseUrl),
         ),
         const ListTile(
           leading: Icon(Icons.info_outline),

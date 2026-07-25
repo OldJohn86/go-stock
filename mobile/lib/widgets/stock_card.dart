@@ -16,36 +16,78 @@ class StockCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isUp = stock.isUp;
+    final priceColor = isUp ? Colors.red : Colors.green;
+
+    // 取股票名称的第一个字符作为头像
+    final initial = stock.stockName.isNotEmpty ? stock.stockName[0] : '?';
+
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: ListTile(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        title: Text(
-          stock.stockName,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          stock.stockCode,
-          style: TextStyle(color: Colors.grey[600], fontSize: 12),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              stock.currentPrice.toStringAsFixed(2),
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: stock.isUp ? Colors.red : Colors.green,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              // Avatar with stock initial
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: priceColor.withValues(alpha: 0.12),
+                child: Text(
+                  initial,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: priceColor,
+                  ),
+                ),
               ),
-            ),
-            PriceChange(
-              change: stock.change,
-              changePercent: stock.changePercent,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ],
+              const SizedBox(width: 14),
+              // Name + code
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      stock.stockName,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      stock.stockCode,
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              // Price + change
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    stock.currentPrice.toStringAsFixed(2),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: priceColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  PriceChange(
+                    change: stock.change,
+                    changePercent: stock.changePercent,
+                    style: TextStyle(fontSize: 12, color: priceColor),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

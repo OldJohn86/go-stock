@@ -40,4 +40,19 @@ class StockRealTime {
       preClose > 0 ? (change / preClose) * 100 : 0;
 
   bool get isUp => change >= 0;
+
+  /// 从股票代码和名称构造（用于快速导航，后续会拉取实时数据）
+  factory StockRealTime.fromCode(String code, String name) {
+    return StockRealTime(
+      stockCode: code,
+      stockName: name,
+      currentPrice: 0,
+      preClose: 0,
+      open: 0,
+      high: 0,
+      low: 0,
+      date: '',
+      time: '',
+    );
+  }
 }

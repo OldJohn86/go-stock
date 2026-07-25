@@ -1,13 +1,191 @@
 import 'package:flutter/material.dart';
 
+import '../api/stock_api.dart';
+import '../models/kline_data.dart';
+import '../models/minute_data.dart';
 import '../models/stock_info.dart';
+import '../widgets/indicator_chart.dart';
+import '../widgets/kline_chart.dart';
+import '../widgets/minute_chart.dart';
 import '../widgets/price_change.dart';
 
-/// 股票详情页（K 线等后续添加）
-class StockDetailPage extends StatelessWidget {
+/// 股票详情页（含 K线 / 分时 / 详情）
+class StockDetailPage extends StatefulWidget {
   final StockRealTime stock;
 
   const StockDetailPage({super.key, required this.stock});
+
+  /// 从股票代码和名称快速导航（会异步拉取实时行情）
+  factory StockDetailPage.fromCode(String code, String name) {
+    return StockDetailPage(stock: StockRealTime.fromCode(code, name));
+  }
+
+  @override
+  State<StockDetailPage> createState() => _StockDetailPageState();
+}
+
+class _StockDetailPageState extends State<StockDetailPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  final StockApi _api = StockApi();
+
+  // 自选状态
+  bool _isFollowed = false;
+  bool _followChecking = true;
+
+  // K线数据
+  List<KLineData> _klineData = [];
+  bool _klineLoading = false;
+  String _klineType = '101'; // 101=日K
+
+  // 分时数据
+  List<MinuteData> _minuteData = [];
+  String _minuteDate = '';
+  bool _minuteLoading = false;
+
+  // 价格信息（更新用）
+  late StockRealTime _stock;
+
+  // 技术指标
+  IndicatorType _indicatorType = IndicatorType.none;
+
+  final List<_KLineTypeOption> _klineTypes = [
+    _KLineTypeOption('日K', '101'),
+    _KLineTypeOption('周K', '102'),
+    _KLineTypeOption('月K', '103'),
+    _KLineTypeOption('5分', '5'),
+    _KLineTypeOption('15分', '15'),
+    _KLineTypeOption('30分', '30'),
+    _KLineTypeOption('60分', '60'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _stock = widget.stock;
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    // 检查自选状态
+    _checkFollowStatus();
+    // 如果是从代码快速进入，先拉实时行情
+    if (_stock.currentPrice == 0) _fetchRealTimePrice();
+    // 默认加载K线
+    _fetchKLineData();
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onTabChanged() {
+    if (!_tabController.indexIsChanging) {
+      switch (_tabController.index) {
+        case 0: // K线
+          if (_klineData.isEmpty) _fetchKLineData();
+          break;
+        case 1: // 分时
+          if (_minuteData.isEmpty) _fetchMinuteData();
+          break;
+      }
+    }
+  }
+
+  Future<void> _fetchKLineData() async {
+    setState(() => _klineLoading = true);
+    try {
+      final data =
+          await _api.getKLineData(_stock.stockCode, type: _klineType);
+      if (mounted) {
+        setState(() {
+          _klineData = data;
+          _klineLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _klineLoading = false);
+      }
+    }
+  }
+
+  Future<void> _fetchMinuteData() async {
+    setState(() => _minuteLoading = true);
+    try {
+      final result = await _api.getMinuteData(_stock.stockCode);
+      if (mounted) {
+        setState(() {
+          _minuteData = result['data'] as List<MinuteData>;
+          _minuteDate = result['date'] as String;
+          _minuteLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _minuteLoading = false);
+      }
+    }
+  }
+
+  // ---- 自选股操作 ----
+  Future<void> _checkFollowStatus() async {
+    try {
+      final list = await _api.getFollowList();
+      if (mounted) {
+        setState(() {
+          _isFollowed = list.any((s) => s.stockCode == _stock.stockCode);
+          _followChecking = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _followChecking = false);
+    }
+  }
+
+  Future<void> _toggleFollow() async {
+    if (_isFollowed) {
+      final msg = await _api.unfollowStock(_stock.stockCode);
+      if (mounted) {
+        setState(() => _isFollowed = false);
+        if (msg.contains('成功')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('已取消关注')),
+          );
+        }
+      }
+    } else {
+      final msg = await _api.followStock(_stock.stockCode);
+      if (mounted) {
+        setState(() => _isFollowed = true);
+        if (msg.contains('成功')) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('已添加自选')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _fetchRealTimePrice() async {
+    try {
+      final realTime = await _api.getRealTimePrice(_stock.stockCode);
+      if (realTime != null && mounted) {
+        setState(() => _stock = realTime);
+      }
+    } catch (_) {}
+  }
+
+  void _onKLineTypeChanged(String type) {
+    if (_klineType == type) return;
+    setState(() {
+      _klineType = type;
+      _klineData = [];
+      _indicatorType = IndicatorType.none;
+    });
+    _fetchKLineData();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,26 +193,51 @@ class StockDetailPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(stock.stockName),
+        title: Text(_stock.stockName),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: '刷新',
+            onPressed: () {
+              switch (_tabController.index) {
+                case 0:
+                  _fetchKLineData();
+                  break;
+                case 1:
+                  _fetchMinuteData();
+                  break;
+              }
+            },
+          ),
+          if (!_followChecking)
+            IconButton(
+              icon: Icon(
+                _isFollowed ? Icons.star : Icons.star_border,
+                color: _isFollowed ? Colors.amber : null,
+              ),
+              tooltip: _isFollowed ? '取消关注' : '添加自选',
+              onPressed: _toggleFollow,
+            ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Row(
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      stock.currentPrice.toStringAsFixed(2),
+                      _stock.currentPrice.toStringAsFixed(2),
                       style: theme.textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: stock.isUp ? Colors.red : Colors.green,
+                        color: _stock.isUp ? Colors.red : Colors.green,
                       ),
                     ),
                     PriceChange(
-                      change: stock.change,
-                      changePercent: stock.changePercent,
+                      change: _stock.change,
+                      changePercent: _stock.changePercent,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontSize: 14,
                       ),
@@ -42,30 +245,169 @@ class StockDetailPage extends StatelessWidget {
                   ],
                 ),
                 const Spacer(),
-                Text(stock.stockCode,
-                    style: TextStyle(color: Colors.grey[600])),
+                Text(
+                  _stock.stockCode,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
               ],
             ),
           ),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          _infoRow(theme, '今开', stock.open.toStringAsFixed(2)),
-          _infoRow(theme, '昨收', stock.preClose.toStringAsFixed(2)),
-          _infoRow(theme, '最高', stock.high.toStringAsFixed(2)),
-          _infoRow(theme, '最低', stock.low.toStringAsFixed(2)),
+          // TabBar
+          Container(
+            color: theme.colorScheme.surface,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: theme.colorScheme.primary,
+              unselectedLabelColor: Colors.grey,
+              tabs: const [
+                Tab(text: 'K线'),
+                Tab(text: '分时'),
+                Tab(text: '详情'),
+              ],
+            ),
+          ),
+          // Tab content
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildKLineTab(context),
+                _buildMinuteTab(context),
+                _buildDetailTab(context),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKLineTab(BuildContext context) {
+    return Column(
+      children: [
+        // 周期选择器
+        SizedBox(
+          height: 44,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            children: _klineTypes.map((opt) {
+              final selected = _klineType == opt.type;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: ChoiceChip(
+                  label: Text(
+                    opt.label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: selected ? Colors.white : Colors.grey[700],
+                    ),
+                  ),
+                  selected: selected,
+                  selectedColor: Theme.of(context).colorScheme.primary,
+                  backgroundColor: Colors.grey[100],
+                  visualDensity: VisualDensity.compact,
+                  onSelected: (_) => _onKLineTypeChanged(opt.type),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        // 技术指标切换
+        SizedBox(
+          height: 32,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            children: [
+              _indicatorChip('关闭', IndicatorType.none),
+              const SizedBox(width: 6),
+              _indicatorChip('MACD', IndicatorType.macd),
+              const SizedBox(width: 6),
+              _indicatorChip('KDJ', IndicatorType.kdj),
+              const SizedBox(width: 6),
+              _indicatorChip('RSI', IndicatorType.rsi),
+            ],
+          ),
+        ),
+        // K线图 + 指标子图
+        Expanded(
+          child: _klineLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _klineData.isEmpty
+                  ? const Center(child: Text('暂无K线数据'))
+                  : Column(
+                      children: [
+                        const SizedBox(height: 4),
+                        const KLineLegend(),
+                        Expanded(
+                          child: KLineChart(data: _klineData, height: double.infinity),
+                        ),
+                        if (_indicatorType != IndicatorType.none)
+                          IndicatorChart(
+                            data: _klineData,
+                            type: _indicatorType,
+                            height: 110,
+                          ),
+                      ],
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Widget _indicatorChip(String label, IndicatorType type) {
+    final selected = _indicatorType == type;
+    return ChoiceChip(
+      label: Text(label, style: TextStyle(fontSize: 12, color: selected ? Colors.white : Colors.grey[700])),
+      selected: selected,
+      selectedColor: Theme.of(context).colorScheme.primary,
+      backgroundColor: Colors.grey[100],
+      visualDensity: VisualDensity.compact,
+      onSelected: (_) => setState(() => _indicatorType = type),
+    );
+  }
+
+  Widget _buildMinuteTab(BuildContext context) {
+    return _minuteLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _minuteData.isEmpty
+            ? const Center(child: Text('暂无分时数据'))
+            : MinuteChart(
+                data: _minuteData,
+                date: _minuteDate,
+                preClose: _stock.preClose,
+                height: double.infinity,
+              );
+  }
+
+  Widget _buildDetailTab(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _infoRow(theme, '今开', _stock.open.toStringAsFixed(2)),
+        _infoRow(theme, '昨收', _stock.preClose.toStringAsFixed(2)),
+        _infoRow(theme, '最高', _stock.high.toStringAsFixed(2)),
+        _infoRow(theme, '最低', _stock.low.toStringAsFixed(2)),
+        _infoRow(theme, '日期', _stock.date),
+        _infoRow(theme, '时间', _stock.time),
+        if (_stock.stockCode.isNotEmpty) ...[
           const SizedBox(height: 24),
           Center(
             child: Text(
-              '更多功能开发中…\nK 线图、技术指标、AI 分析',
+              '更多数据开发中…\n技术指标、AI 分析、财务数据',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[400]),
             ),
           ),
         ],
-      ),
+      ],
     );
   }
 
@@ -81,4 +423,10 @@ class StockDetailPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _KLineTypeOption {
+  final String label;
+  final String type;
+  const _KLineTypeOption(this.label, this.type);
 }
