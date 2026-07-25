@@ -32,6 +32,9 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
+  # Markdown 渲染
+  flutter_markdown: ^0.7.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
