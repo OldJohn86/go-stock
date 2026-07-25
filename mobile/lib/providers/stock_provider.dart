@@ -19,13 +19,35 @@ class FollowListNotifier extends AsyncNotifier<List<StockRealTime>> {
     return _fetch();
   }
 
-  Future<List<StockRealTime>> _fetch() async {
+  Future<List<StockRealTime>> _fetch({bool forceRefresh = false}) async {
     final api = ref.read(stockApiProvider);
-    return api.getFollowList();
+    if (forceRefresh) {
+      return api.getFollowList();
+    }
+    // 默认走缓存，30 秒 TTL
+    return api.getFollowListCached();
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
-    state = AsyncData(await _fetch());
+    state = AsyncData(await _fetch(forceRefresh: true));
+  }
+
+  /// 关注一只股票
+  Future<void> follow(String stockCode) async {
+    final api = ref.read(stockApiProvider);
+    await api.followStock(stockCode);
+    // 刷新后清除缓存，确保下次读取最新数据
+    await api.clearFollowListCache();
+    state = AsyncData(await _fetch(forceRefresh: true));
+  }
+
+  /// 取消关注一只股票
+  Future<void> unfollow(String stockCode) async {
+    final api = ref.read(stockApiProvider);
+    await api.unfollowStock(stockCode);
+    // 刷新后清除缓存，确保下次读取最新数据
+    await api.clearFollowListCache();
+    state = AsyncData(await _fetch(forceRefresh: true));
   }
 }

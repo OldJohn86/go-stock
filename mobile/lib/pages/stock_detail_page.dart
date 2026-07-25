@@ -8,6 +8,7 @@ import '../api/stock_api.dart';
 import '../models/kline_data.dart';
 import '../models/minute_data.dart';
 import '../models/stock_info.dart';
+import '../utils/cache_manager.dart';
 import '../widgets/indicator_chart.dart';
 import '../widgets/kline_chart.dart';
 import '../widgets/minute_chart.dart';
@@ -60,6 +61,22 @@ class _StockDetailPageState extends State<StockDetailPage>
   bool _financeLoading = false;
   bool _financeLoaded = false;
   String? _financeError;
+
+  /// HK stock code detection (mirrors backend IsHKCodeForRoute logic)
+  bool get _isHKStock {
+    final code = _stock.stockCode.toUpperCase().trim();
+    if (code.isEmpty) return false;
+    // .HK suffix or HK prefix
+    if (code.endsWith('.HK') || code.startsWith('HK')) return true;
+    // Pure numeric and length <= 5 (A-shares are always 6 digits)
+    if (RegExp(r'^\d+$').hasMatch(code)) {
+      return code.length <= 5;
+    }
+    return false;
+  }
+
+  /// Human-readable market label
+  String get _marketLabel => _isHKStock ? '港股' : 'A股';
 
   final List<_KLineTypeOption> _klineTypes = [
     _KLineTypeOption('日K', '101'),
@@ -197,7 +214,8 @@ class _StockDetailPageState extends State<StockDetailPage>
 
   Future<void> _fetchRealTimePrice() async {
     try {
-      final realTime = await _api.getRealTimePrice(_stock.stockCode);
+      // 使用缓存获取实时行情（30秒 TTL）
+      final realTime = await _api.getRealTimePriceCached(_stock.stockCode);
       if (realTime != null && mounted) {
         setState(() => _stock = realTime);
       }
@@ -211,9 +229,13 @@ class _StockDetailPageState extends State<StockDetailPage>
       _financeError = null;
     });
     try {
-      final resp = await ApiClient().get(
-        '/f10/latest-finance',
+      final endpoint =
+          _isHKStock ? '/f10/hk-finance' : '/f10/latest-finance';
+      // 缓存 F10 财务数据，TTL 1 小时（财务数据变化不频繁）
+      final resp = await ApiClient().getCached(
+        endpoint,
         params: {'stockCode': _stock.stockCode},
+        maxAge: CacheManager.financeMaxAge,
       );
       if (mounted) {
         setState(() {
@@ -303,9 +325,37 @@ class _StockDetailPageState extends State<StockDetailPage>
                   ],
                 ),
                 const Spacer(),
-                Text(
-                  _stock.stockCode,
-                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      _stock.stockCode,
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isHKStock
+                            ? const Color(0xFF009B77)
+                            : const Color(0xFFE53935),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _marketLabel,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -390,6 +440,13 @@ class _StockDetailPageState extends State<StockDetailPage>
         _financeError = null;
         _financeLoaded = false;
         _financeMarkdown = '';
+        // 手动刷新时清除 F10 缓存
+        final f10Endpoint =
+            _isHKStock ? '/f10/hk-finance' : '/f10/latest-finance';
+        await ApiClient().clearCache(
+          f10Endpoint,
+          params: {'stockCode': _stock.stockCode},
+        );
         await _fetchF10Data();
         break;
     }
@@ -565,11 +622,36 @@ class _StockDetailPageState extends State<StockDetailPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '基本信息',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '基本信息',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _isHKStock
+                              ? const Color(0xFF009B77)
+                              : const Color(0xFFE53935),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          _marketLabel,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   _infoRow(theme, '今开', _stock.open.toStringAsFixed(2)),

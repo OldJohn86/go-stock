@@ -55,6 +55,10 @@ class DailyOperationPlan {
   final String summary;
   final String riskWarning;
   final String status;
+  final String direction; // buy, sell, hold
+  final double plannedPrice;
+  final int plannedQuantity;
+  final String reason;
   final String remarks;
   final bool enableAlert;
   final String notifyChannels;
@@ -70,6 +74,10 @@ class DailyOperationPlan {
     this.summary = '',
     this.riskWarning = '',
     this.status = 'pending',
+    this.direction = 'buy',
+    this.plannedPrice = 0.0,
+    this.plannedQuantity = 0,
+    this.reason = '',
     this.remarks = '',
     this.enableAlert = false,
     this.notifyChannels = '',
@@ -87,6 +95,10 @@ class DailyOperationPlan {
       summary: json['summary'] as String? ?? json['Summary'] as String? ?? '',
       riskWarning: json['riskWarning'] as String? ?? json['RiskWarning'] as String? ?? '',
       status: json['status'] as String? ?? json['Status'] as String? ?? 'pending',
+      direction: json['direction'] as String? ?? json['Direction'] as String? ?? 'buy',
+      plannedPrice: (json['plannedPrice'] as num?)?.toDouble() ?? (json['PlannedPrice'] as num?)?.toDouble() ?? 0.0,
+      plannedQuantity: _parseInt(json['plannedQuantity']) ?? _parseInt(json['PlannedQuantity']) ?? 0,
+      reason: json['reason'] as String? ?? json['Reason'] as String? ?? '',
       remarks: json['remarks'] as String? ?? json['Remarks'] as String? ?? '',
       enableAlert: json['enableAlert'] as bool? ?? json['EnableAlert'] as bool? ?? false,
       notifyChannels: json['notifyChannels'] as String? ?? json['NotifyChannels'] as String? ?? '',
@@ -104,6 +116,10 @@ class DailyOperationPlan {
         'summary': summary,
         'riskWarning': riskWarning,
         'status': status,
+        'direction': direction,
+        'plannedPrice': plannedPrice,
+        'plannedQuantity': plannedQuantity,
+        'reason': reason,
         'remarks': remarks,
         'enableAlert': enableAlert,
         'notifyChannels': notifyChannels,
@@ -122,6 +138,20 @@ class DailyOperationPlan {
         return '已过期';
       default:
         return status;
+    }
+  }
+
+  /// 操作方向显示名
+  String get directionLabel {
+    switch (direction) {
+      case 'buy':
+        return '买入';
+      case 'sell':
+        return '卖出';
+      case 'hold':
+        return '持有';
+      default:
+        return direction;
     }
   }
 

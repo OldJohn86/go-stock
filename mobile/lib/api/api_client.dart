@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
+import '../utils/cache_manager.dart';
 
 /// Callback for network state changes.
 ///
@@ -40,6 +41,26 @@ class ApiClient {
   static final ApiClient _instance = ApiClient._();
   factory ApiClient() => _instance;
 
+  /// Whether response caching is enabled.
+  bool cacheEnabled = true;
+
+  /// Build a deterministic cache key from the request path and query params.
+  static String _buildCacheKey(String path, Map<String, dynamic>? params) {
+    final buffer = StringBuffer(path);
+    if (params != null && params.isNotEmpty) {
+      final sortedKeys = params.keys.toList()..sort();
+      for (final key in sortedKeys) {
+        final value = params[key];
+        if (value is List) {
+          buffer.write('|$key=${value.join(',')}');
+        } else {
+          buffer.write('|$key=$value');
+        }
+      }
+    }
+    return buffer.toString();
+  }
+
   // ---------------------------------------------------------------------------
   // Network state callback registry
   // ---------------------------------------------------------------------------
@@ -71,6 +92,165 @@ class ApiClient {
 
   Future<ApiResponse> get(String path, {Map<String, dynamic>? params}) async {
     return _requestWithRetry(() => _dio.get(path, queryParameters: params));
+  }
+
+  /// Same as [get] but caches the response in SharedPreferences.
+  ///
+  /// On a cache hit within [maxAge], returns the cached response without a
+  /// network call. On a cache miss or expiry, fetches from the network and
+  /// caches the result. On network failure, optionally falls back to stale
+  /// (expired) cache when [useStaleOnError] is true.
+  Future<ApiResponse> getCached(
+    String path, {
+    Map<String, dynamic>? params,
+    Duration maxAge = CacheManager.realtimeMaxAge,
+    bool useStaleOnError = true,
+  }) async {
+    if (!cacheEnabled) {
+      return get(path, params: params);
+    }
+
+    final cacheKey = _buildCacheKey(path, params);
+
+    // Try cache first
+    final cached = await CacheManager.get<String>(
+      cacheKey,
+      (map) => map['d'] as String,
+      maxAge: maxAge,
+    );
+    if (cached != null) {
+      try {
+        return ApiResponse.fromJson(
+          json.decode(cached) as Map<String, dynamic>,
+        );
+      } catch (_) {
+        // Corrupted cache entry, fall through to network
+      }
+    }
+
+    // Cache miss / expired, fetch from network
+    final result = await _requestWithRetry(
+      () => _dio.get(path, queryParameters: params),
+    );
+
+    if (result.isSuccess) {
+      await _saveCache(cacheKey, result);
+      return result;
+    }
+
+    // Network error — try stale cache as fallback
+    if (useStaleOnError) {
+      final stale = await CacheManager.getStale<String>(
+        cacheKey,
+        (map) => map['d'] as String,
+      );
+      if (stale != null) {
+        return ApiResponse.fromJson(
+          json.decode(stale) as Map<String, dynamic>,
+        );
+      }
+    }
+
+    return result;
+  }
+
+  /// Returns cached data immediately if available, then fetches fresh data from
+  /// the network in the background and updates the cache.
+  ///
+  /// - When a fresh cache exists within [maxAge]: returns the cached response
+  ///   and schedules a background refresh.
+  /// - When cache is stale or missing: returns the result of [get] (which
+  ///   fetches from network).
+  /// - When the network request fails and [useStaleOnError] is true: returns
+  ///   stale (expired) cache as a fallback.
+  ///
+  /// Use this in UI pages so the user sees data immediately while fresh data
+  /// loads silently.
+  Future<ApiResponse> getWithCache(
+    String path, {
+    Map<String, dynamic>? params,
+    required Duration maxAge,
+    bool useStaleOnError = true,
+  }) async {
+    if (!cacheEnabled) {
+      return get(path, params: params);
+    }
+
+    final cacheKey = _buildCacheKey(path, params);
+
+    // Try cache first
+    final cached = await CacheManager.get<String>(
+      cacheKey,
+      (map) => map['d'] as String,
+      maxAge: maxAge,
+    );
+    if (cached != null) {
+      // Return cached immediately, refresh in background
+      _refreshCacheInBackground(path, params, cacheKey);
+      try {
+        return ApiResponse.fromJson(
+          json.decode(cached) as Map<String, dynamic>,
+        );
+      } catch (_) {
+        // Corrupted cache, ignore and fall through
+      }
+    }
+
+    // Cache miss or corrupted, fetch from network
+    final result = await _requestWithRetry(
+      () => _dio.get(path, queryParameters: params),
+    );
+
+    if (result.isSuccess) {
+      await _saveCache(cacheKey, result);
+      return result;
+    }
+
+    // Network error with stale fallback
+    if (useStaleOnError) {
+      final stale = await CacheManager.getStale<String>(
+        cacheKey,
+        (map) => map['d'] as String,
+      );
+      if (stale != null) {
+        return ApiResponse.fromJson(
+          json.decode(stale) as Map<String, dynamic>,
+        );
+      }
+    }
+
+    return result;
+  }
+
+  /// Remove the cached response for a specific endpoint.
+  Future<void> clearCache(String path, {Map<String, dynamic>? params}) async {
+    if (!cacheEnabled) return;
+    await CacheManager.remove(_buildCacheKey(path, params));
+  }
+
+  /// Persist an [ApiResponse] into the cache.
+  Future<void> _saveCache(String cacheKey, ApiResponse response) async {
+    await CacheManager.set<String>(
+      cacheKey,
+      json.encode(response.toJson()),
+      (s) => {'d': s},
+    );
+  }
+
+  /// Fire-and-forget background cache refresh.
+  void _refreshCacheInBackground(
+    String path,
+    Map<String, dynamic>? params,
+    String cacheKey,
+  ) {
+    _requestWithRetry(() => _dio.get(path, queryParameters: params))
+        .then((result) {
+      if (result.isSuccess) {
+        _saveCache(cacheKey, result);
+      }
+    }).catchError((_) {
+      // Silently ignore background refresh failures
+    });
   }
 
   Future<ApiResponse> post(String path, {dynamic data}) async {
@@ -216,6 +396,13 @@ class ApiResponse {
       data: json['data'],
     );
   }
+
+  /// Serialize to a JSON map (mirrors [fromJson] keys).
+  Map<String, dynamic> toJson() => {
+        'code': code,
+        'message': message,
+        'data': data,
+      };
 
   bool get isSuccess => code == 0;
 }

@@ -16,7 +16,7 @@ class StockListPage extends ConsumerStatefulWidget {
 }
 
 class _StockListPageState extends ConsumerState<StockListPage> {
-  int _tabIndex = 1; // 默认显示"市场"
+  int _tabIndex = 0; // 默认显示"自选"
 
   // 全市场数据
   List<StockRealTime> _marketStocks = [];
@@ -24,10 +24,12 @@ class _StockListPageState extends ConsumerState<StockListPage> {
   String? _marketError;
   int _page = 1;
   final _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
+    // 加载自选列表（由 provider 自动触发），同时加载市场列表
     _fetchMarketStocks();
   }
 
@@ -35,6 +37,15 @@ class _StockListPageState extends ConsumerState<StockListPage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  List<StockRealTime> get _displayedStocks {
+    if (_searchQuery.isEmpty) return _marketStocks;
+    final query = _searchQuery.toUpperCase();
+    return _marketStocks.where((s) =>
+      s.stockCode.toUpperCase().contains(query) ||
+      s.stockName.toUpperCase().contains(query)
+    ).toList();
   }
 
   Future<void> _fetchMarketStocks({bool loadMore = false}) async {
@@ -49,7 +60,7 @@ class _StockListPageState extends ConsumerState<StockListPage> {
       final stocks = await api.getStockList(
         page: loadMore ? _page + 1 : 1,
         pageSize: 50,
-        name: _searchController.text.trim(),
+        name: '',
       );
       if (mounted) {
         setState(() {
@@ -75,9 +86,30 @@ class _StockListPageState extends ConsumerState<StockListPage> {
     }
   }
 
+  /// 切换关注状态（用于市场页搜索结果的星标按钮）
+  Future<void> _toggleFollow(String stockCode) async {
+    final api = StockApi();
+    final followAsync = ref.read(followListProvider);
+    final followedCodes = followAsync.valueOrNull?.map((e) => e.stockCode).toSet() ?? {};
+    if (followedCodes.contains(stockCode)) {
+      await api.unfollowStock(stockCode);
+    } else {
+      await api.followStock(stockCode);
+    }
+    ref.read(followListProvider.notifier).refresh();
+  }
+
+  /// 从自选列表取消关注
+  Future<void> _unfollowFromWatchlist(String stockCode) async {
+    final api = StockApi();
+    await api.unfollowStock(stockCode);
+    ref.read(followListProvider.notifier).refresh();
+  }
+
   @override
   Widget build(BuildContext context) {
     final followAsync = ref.watch(followListProvider);
+    final followedCodes = followAsync.valueOrNull?.map((e) => e.stockCode).toSet() ?? {};
 
     return Scaffold(
       appBar: AppBar(
@@ -91,7 +123,9 @@ class _StockListPageState extends ConsumerState<StockListPage> {
         ),
         centerTitle: true,
       ),
-      body: _tabIndex == 0 ? _buildFollowTab(followAsync) : _buildMarketTab(),
+      body: _tabIndex == 0
+          ? _buildFollowTab(followAsync)
+          : _buildMarketTab(followedCodes),
     );
   }
 
@@ -99,7 +133,13 @@ class _StockListPageState extends ConsumerState<StockListPage> {
     final selected = _tabIndex == index;
     final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
-      onTap: () => setState(() => _tabIndex = index),
+      onTap: () {
+        setState(() => _tabIndex = index);
+        // 切换到"自选"时自动刷新
+        if (index == 0) {
+          ref.read(followListProvider.notifier).refresh();
+        }
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
@@ -151,23 +191,58 @@ class _StockListPageState extends ConsumerState<StockListPage> {
             return _buildEmpty(
               icon: Icons.star_border,
               title: '还没有关注任何股票',
-              subtitle: '切换到"市场"页浏览并关注',
+              subtitle: '切换到"市场"页浏览并关注喜欢的股票',
+              actionLabel: '去浏览市场',
+              action: () => setState(() => _tabIndex = 1),
             );
           }
           return ListView.builder(
             padding: const EdgeInsets.only(top: 8),
             itemCount: stocks.length,
-            itemBuilder: (_, i) => StockCard(
-              stock: stocks[i],
-              onTap: () => _openDetail(stocks[i]),
-            ),
+            itemBuilder: (_, i) => _buildFollowItem(stocks[i]),
           );
         },
       ),
     );
   }
 
-  Widget _buildMarketTab() {
+  Widget _buildFollowItem(StockRealTime stock) {
+    return Dismissible(
+      key: ValueKey('follow_${stock.stockCode}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        decoration: BoxDecoration(
+          color: Colors.red[400],
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
+      ),
+      confirmDismiss: (_) async {
+        return true;
+      },
+      onDismissed: (_) {
+        _unfollowFromWatchlist(stock.stockCode);
+      },
+      child: StockCard(
+        stock: stock,
+        onTap: () => _openDetail(stock),
+        trailing: IconButton(
+          icon: Icon(Icons.remove_circle_outline, color: Colors.red[300], size: 20),
+          tooltip: '取消关注',
+          onPressed: () => _unfollowFromWatchlist(stock.stockCode),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarketTab(Set<String> followedCodes) {
+    final displayed = _displayedStocks;
+
     return Column(
       children: [
         // 搜索栏
@@ -175,8 +250,11 @@ class _StockListPageState extends ConsumerState<StockListPage> {
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
           child: TextField(
             controller: _searchController,
+            onChanged: (value) {
+              setState(() => _searchQuery = value);
+            },
             decoration: InputDecoration(
-              hintText: '搜索股票名称',
+              hintText: '搜索股票名称或代码',
               filled: true,
               fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
               prefixIcon: Icon(Icons.search, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -185,7 +263,7 @@ class _StockListPageState extends ConsumerState<StockListPage> {
                       icon: Icon(Icons.clear, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       onPressed: () {
                         _searchController.clear();
-                        _fetchMarketStocks();
+                        setState(() => _searchQuery = '');
                       },
                     )
                   : null,
@@ -205,7 +283,9 @@ class _StockListPageState extends ConsumerState<StockListPage> {
                 borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
               ),
             ),
-            onSubmitted: (_) => _fetchMarketStocks(),
+            onSubmitted: (_) {
+              // 保持本地过滤，不清除搜索
+            },
           ),
         ),
         // 列表
@@ -215,43 +295,59 @@ class _StockListPageState extends ConsumerState<StockListPage> {
               : _marketError != null && _marketStocks.isEmpty
                   ? _buildError(ref, _marketError!, isFollow: false)
                   : RefreshIndicator(
-                  onRefresh: () => _fetchMarketStocks(),
-                  child: _marketStocks.isEmpty
-                      ? _buildEmpty(
-                          icon: Icons.search_off,
-                          title: '未找到相关股票',
-                          subtitle: '请尝试其他搜索词',
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.only(top: 4),
-                          itemCount: _marketStocks.length + 1,
-                          itemBuilder: (_, i) {
-                            if (i == _marketStocks.length) {
-                              return _marketLoading
-                                  ? const Padding(
-                                      padding: EdgeInsets.all(16),
-                                      child: Center(
-                                          child: CircularProgressIndicator()),
-                                    )
-                                  : Padding(
-                                      padding: const EdgeInsets.all(16),
-                                      child: Center(
-                                        child: TextButton(
-                                          onPressed: () =>
-                                              _fetchMarketStocks(
-                                                  loadMore: true),
-                                          child: const Text('加载更多'),
-                                        ),
-                                      ),
-                                    );
-                            }
-                            return StockCard(
-                              stock: _marketStocks[i],
-                              onTap: () => _openDetail(_marketStocks[i]),
-                            );
-                          },
-                        ),
-                ),
+                      onRefresh: () => _fetchMarketStocks(),
+                      child: displayed.isEmpty
+                          ? _buildEmpty(
+                              icon: Icons.search_off,
+                              title: '未找到相关股票',
+                              subtitle: '请尝试其他搜索词',
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.only(top: 4),
+                              itemCount: displayed.length + 1,
+                              itemBuilder: (_, i) {
+                                if (i == displayed.length) {
+                                  // 仅在非搜索状态下显示"加载更多"
+                                  if (_searchQuery.isNotEmpty) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  return _marketLoading
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(16),
+                                          child: Center(
+                                              child: CircularProgressIndicator()),
+                                        )
+                                      : Padding(
+                                          padding: const EdgeInsets.all(16),
+                                          child: Center(
+                                            child: TextButton(
+                                              onPressed: () =>
+                                                  _fetchMarketStocks(loadMore: true),
+                                              child: const Text('加载更多'),
+                                            ),
+                                          ),
+                                        );
+                                }
+                                final stock = displayed[i];
+                                final isFollowed = followedCodes.contains(stock.stockCode);
+                                return StockCard(
+                                  stock: stock,
+                                  onTap: () => _openDetail(stock),
+                                  trailing: IconButton(
+                                    icon: Icon(
+                                      isFollowed ? Icons.star : Icons.star_border,
+                                      color: isFollowed ? Colors.amber : Colors.grey[400],
+                                      size: 22,
+                                    ),
+                                    tooltip: isFollowed ? '取消关注' : '关注',
+                                    onPressed: () => _toggleFollow(stock.stockCode),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
         ),
       ],
     );
@@ -291,6 +387,8 @@ class _StockListPageState extends ConsumerState<StockListPage> {
     required IconData icon,
     required String title,
     required String subtitle,
+    String? actionLabel,
+    VoidCallback? action,
   }) {
     return Center(
       child: Column(
@@ -307,6 +405,14 @@ class _StockListPageState extends ConsumerState<StockListPage> {
             subtitle,
             style: TextStyle(color: Colors.grey[600], fontSize: 13),
           ),
+          if (actionLabel != null && action != null) ...[
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: action,
+              icon: const Icon(Icons.explore, size: 18),
+              label: Text(actionLabel),
+            ),
+          ],
         ],
       ),
     );

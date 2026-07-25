@@ -1,6 +1,7 @@
 import '../models/kline_data.dart';
 import '../models/minute_data.dart';
 import '../models/stock_info.dart';
+import '../utils/cache_manager.dart';
 import 'api_client.dart';
 
 class StockApi {
@@ -116,6 +117,84 @@ class StockApi {
           .toList();
     }
     return [];
+  }
+
+  /// 获取自选股列表（带缓存，30秒 TTL）
+  ///
+  /// 优先返回缓存数据，同时在后台刷新。
+  Future<List<StockRealTime>> getFollowListCached({int groupId = 0}) async {
+    final path = '/follow/list';
+    final params = <String, dynamic>{'groupId': groupId.toString()};
+
+    final resp = await _client.getWithCache(
+      path,
+      params: params,
+      maxAge: CacheManager.realtimeMaxAge,
+    );
+
+    if (resp.isSuccess && resp.data != null) {
+      final list = resp.data as List<dynamic>;
+      return list
+          .map((e) => StockRealTime.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
+  }
+
+  /// 获取全市场股票列表（带缓存，5分钟 TTL）
+  Future<List<StockRealTime>> getStockListCached({
+    int page = 1,
+    int pageSize = 20,
+    String name = '',
+  }) async {
+    final params = <String, String>{
+      'page': page.toString(),
+      'pageSize': pageSize.toString(),
+    };
+    if (name.isNotEmpty) params['name'] = name;
+
+    final path = '/stock/list';
+    final resp = await _client.getWithCache(
+      path,
+      params: params,
+      maxAge: CacheManager.stockListMaxAge,
+    );
+
+    if (resp.isSuccess && resp.data != null) {
+      final data = resp.data as Map<String, dynamic>;
+      final result = data['result'] as Map<String, dynamic>?;
+      if (result != null) {
+        final list = result['data'] as List<dynamic>?;
+        if (list != null) {
+          return list
+              .map((e) => _convertMarketItem(e as Map<String, dynamic>))
+              .map((e) => StockRealTime.fromJson(e))
+              .toList();
+        }
+      }
+    }
+    return [];
+  }
+
+  /// 获取单只股票实时行情（带缓存，30秒 TTL）
+  Future<StockRealTime?> getRealTimePriceCached(String stockCode) async {
+    final path = '/stock/real-time/$stockCode';
+    final resp = await _client.getWithCache(
+      path,
+      maxAge: CacheManager.realtimeMaxAge,
+    );
+    if (resp.isSuccess && resp.data != null) {
+      return StockRealTime.fromJson(resp.data as Map<String, dynamic>);
+    }
+    return null;
+  }
+
+  /// 清除自选股列表缓存
+  Future<void> clearFollowListCache({int groupId = 0}) async {
+    await _client.clearCache(
+      '/follow/list',
+      params: <String, dynamic>{'groupId': groupId.toString()},
+    );
   }
 
   /// 关注股票

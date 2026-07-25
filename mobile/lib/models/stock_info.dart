@@ -41,6 +41,19 @@ class StockRealTime {
 
   bool get isUp => change >= 0;
 
+  /// Serialize to a JSON map (mirrors [fromJson] keys).
+  Map<String, dynamic> toJson() => {
+        '股票代码': stockCode,
+        '股票名称': stockName,
+        '当前价格': currentPrice,
+        '昨日收盘价': preClose,
+        '今日开盘价': open,
+        '今日最高价': high,
+        '今日最低价': low,
+        '日期': date,
+        '时间': time,
+      };
+
   /// 从股票代码和名称构造（用于快速导航，后续会拉取实时数据）
   factory StockRealTime.fromCode(String code, String name) {
     return StockRealTime(

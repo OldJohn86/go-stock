@@ -7,11 +7,13 @@ import 'price_change.dart';
 class StockCard extends StatelessWidget {
   final StockRealTime stock;
   final VoidCallback? onTap;
+  final Widget? trailing;
 
   const StockCard({
     super.key,
     required this.stock,
     this.onTap,
+    this.trailing,
   });
 
   @override
@@ -89,6 +91,11 @@ class StockCard extends StatelessWidget {
                   ),
                 ],
               ),
+              if (trailing != null)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: trailing!,
+                ),
             ],
           ),
         ),
