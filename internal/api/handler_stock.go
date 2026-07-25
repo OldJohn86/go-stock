@@ -9,6 +9,47 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// HandleGetStockKLineData 获取股票K线数据
+// GET /api/v1/stock/:code/kline?type=101&days=100
+// type: 101=日K, 102=周K, 103=月K, 5/15/30/60=分钟线
+func HandleGetStockKLineData(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		badRequest(c, "股票代码不能为空")
+		return
+	}
+
+	kType := c.DefaultQuery("type", "101")
+	days, _ := strconv.Atoi(c.DefaultQuery("days", "100"))
+	if days <= 0 || days > 500 {
+		days = 100
+	}
+
+	result := data.FetchKLineWithFallback(code, "", kType, days, "")
+	if result != nil && result.Data != nil && len(*result.Data) > 0 {
+		success(c, result.Data)
+		return
+	}
+
+	fail(c, "获取K线数据失败")
+}
+
+// HandleGetStockMinuteData 获取分时数据
+// GET /api/v1/stock/:code/minute
+func HandleGetStockMinuteData(c *gin.Context) {
+	code := c.Param("code")
+	if code == "" {
+		badRequest(c, "股票代码不能为空")
+		return
+	}
+
+	minData, date := data.NewStockDataApi().GetStockMinutePriceData(code)
+	success(c, gin.H{
+		"date": date,
+		"data": minData,
+	})
+}
+
 // HandleGetStockRealTimePrice 获取单只股票实时行情
 // GET /api/v1/stock/real-time/:code
 func HandleGetStockRealTimePrice(c *gin.Context) {

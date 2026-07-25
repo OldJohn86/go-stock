@@ -27,6 +27,8 @@ func StartServer(addr string) {
 			stock.GET("/real-time/:code", HandleGetStockRealTimePrice)
 			stock.GET("/realtime-batch", HandleGetStockRealTimeBatch)
 			stock.GET("/list", HandleGetAllStocks)
+			stock.GET("/:code/kline", HandleGetStockKLineData)   // K线数据
+			stock.GET("/:code/minute", HandleGetStockMinuteData) // 分时数据
 		}
 
 		// 自选
