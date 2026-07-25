@@ -431,22 +431,72 @@ class _StockDetailPageState extends State<StockDetailPage>
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _infoRow(theme, '今开', _stock.open.toStringAsFixed(2)),
-        _infoRow(theme, '昨收', _stock.preClose.toStringAsFixed(2)),
-        _infoRow(theme, '最高', _stock.high.toStringAsFixed(2)),
-        _infoRow(theme, '最低', _stock.low.toStringAsFixed(2)),
-        _infoRow(theme, '日期', _stock.date),
-        _infoRow(theme, '时间', _stock.time),
-        if (_stock.stockCode.isNotEmpty) ...[
-          const SizedBox(height: 24),
-          Center(
-            child: Text(
-              '更多数据开发中…\n技术指标、AI 分析、财务数据',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[400]),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('基本信息',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold)),
+                const SizedBox(height: 12),
+                _infoRow(theme, '今开', _stock.open.toStringAsFixed(2)),
+                _infoRow(theme, '昨收', _stock.preClose.toStringAsFixed(2)),
+                _infoRow(theme, '最高', _stock.high.toStringAsFixed(2)),
+                _infoRow(theme, '最低', _stock.low.toStringAsFixed(2)),
+                _infoRow(theme, '日期', _stock.date),
+                _infoRow(theme, '时间', _stock.time),
+              ],
             ),
           ),
-        ],
+        ),
+        const SizedBox(height: 16),
+        if (_financeLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(30),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (_financeMarkdown.isNotEmpty)
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.withValues(alpha: 0.1)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('财务数据 (F10)',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  MarkdownBody(
+                    data: _financeMarkdown,
+                    styleSheet: MarkdownStyleSheet(
+                      p: theme.textTheme.bodySmall?.copyWith(height: 1.6),
+                      tableHead: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary),
+                      tableBody: theme.textTheme.bodySmall?.copyWith(
+                          height: 1.5),
+                      tableBorder: TableBorder.all(
+                          color: Colors.grey.withValues(alpha: 0.2)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
