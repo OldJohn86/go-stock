@@ -55,7 +55,14 @@ type Settings struct {
 	EmApiKey               string `json:"emApiKey" gorm:"column:em_api_key"`
 	WindowWidth            int    `json:"windowWidth"`
 	WindowHeight           int    `json:"windowHeight"`
-	PromptPlazaApiBase     string `json:"promptPlazaApiBase" gorm:"column:prompt_plaza_api_base"`
+	PromptPlazaApiBase     string  `json:"promptPlazaApiBase" gorm:"column:prompt_plaza_api_base"`
+	TotalCapital           float64 `json:"totalCapital"`
+	DefaultStopLossPct     float64 `json:"defaultStopLossPct"`
+	MaxPositionPct         float64 `json:"maxPositionPct"`
+	MinCashPct             float64 `json:"minCashPct"`
+	FreqTradeDays          int     `json:"freqTradeDays"`
+	FreqTradeLimit         int     `json:"freqTradeLimit"`
+	ChaseBuyPct            float64 `json:"chaseBuyPct"`
 }
 
 func (receiver Settings) TableName() string {
@@ -163,9 +170,16 @@ func UpdateConfig(s *SettingConfig) string {
 			"em_api_key":                 s.EmApiKey,
 			"window_width":               s.WindowWidth,
 			"window_height":              s.WindowHeight,
-			"prompt_plaza_api_base":      s.PromptPlazaApiBase,
-		})
-		if result.Error != nil {
+				"prompt_plaza_api_base":      s.PromptPlazaApiBase,
+				"total_capital":              s.TotalCapital,
+				"default_stop_loss_pct":      s.DefaultStopLossPct,
+				"max_position_pct":           s.MaxPositionPct,
+				"min_cash_pct":               s.MinCashPct,
+				"freq_trade_days":            s.FreqTradeDays,
+				"freq_trade_limit":           s.FreqTradeLimit,
+				"chase_buy_pct":              s.ChaseBuyPct,
+			})
+			if result.Error != nil {
 			logger.SugaredLogger.Errorf("更新配置失败: %v", result.Error)
 			return "保存失败: " + result.Error.Error()
 		}
@@ -316,6 +330,28 @@ func GetSettingConfig() *SettingConfig {
 	settings.EnableAgent = false
 
 	settingConfig.Settings = settings
+	// 风险控制设置默认值
+	if settings.TotalCapital <= 0 {
+		settings.TotalCapital = 100000
+	}
+	if settings.DefaultStopLossPct == 0 {
+		settings.DefaultStopLossPct = -8
+	}
+	if settings.MaxPositionPct <= 0 {
+		settings.MaxPositionPct = 30
+	}
+	if settings.MinCashPct <= 0 {
+		settings.MinCashPct = 5
+	}
+	if settings.FreqTradeDays <= 0 {
+		settings.FreqTradeDays = 7
+	}
+	if settings.FreqTradeLimit <= 0 {
+		settings.FreqTradeLimit = 3
+	}
+	if settings.ChaseBuyPct <= 0 {
+		settings.ChaseBuyPct = 3.0
+	}
 	settingConfig.AiConfigs = aiConfigs
 
 	return settingConfig

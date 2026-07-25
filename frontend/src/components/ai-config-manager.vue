@@ -142,8 +142,16 @@ function onModelNameChange(aiConfig, newModelName) {
   fetchModelInfo(aiConfig, newModelName)
 }
 
+function isOllamaUrl(baseUrl) {
+  return baseUrl && (baseUrl.includes(':11434') || baseUrl.toLowerCase().includes('ollama'))
+}
+
 async function fetchAiModels(aiConfig) {
-  if (!aiConfig.baseUrl || !aiConfig.apiKey) {
+  if (!aiConfig.baseUrl) {
+    message.warning('请先填写接口地址')
+    return
+  }
+  if (!aiConfig.apiKey && !isOllamaUrl(aiConfig.baseUrl)) {
     message.warning('请先填写接口地址和 apiKey')
     return
   }

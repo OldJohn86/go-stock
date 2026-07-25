@@ -2975,7 +2975,11 @@ func (a *App) SaveAiAssistantSession(sessionId string, messages []models.AiAssis
 func (a *App) FetchAiModels(baseUrl, apiKey string) []string {
 	baseUrl = strutil.Trim(baseUrl)
 	apiKey = strutil.Trim(apiKey)
-	if baseUrl == "" || apiKey == "" {
+	if baseUrl == "" {
+		return []string{}
+	}
+	isOllama := strings.Contains(baseUrl, ":11434") || strings.Contains(strings.ToLower(baseUrl), "ollama")
+	if !isOllama && apiKey == "" {
 		return []string{}
 	}
 
@@ -2989,11 +2993,15 @@ func (a *App) FetchAiModels(baseUrl, apiKey string) []string {
 	client := data.SharedHTTPClient
 	client.SetBaseURL(baseUrl)
 
-	resp, err := client.R().
-		SetHeader("Authorization", "Bearer "+apiKey).
+	req := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetResult(&respData).
-		Get("/models")
+		SetResult(&respData)
+
+	if apiKey != "" {
+		req.SetHeader("Authorization", "Bearer "+apiKey)
+	}
+
+	resp, err := req.Get("/models")
 	if err != nil {
 		logger.SugaredLogger.Errorf("FetchAiModels error: %v", err)
 		return []string{}
@@ -3676,3 +3684,155 @@ func (a *App) GetMCPToolsByServerID(serverID uint) []models.MCPServerTool {
 func (a *App) GetAllMCPTools() []models.MCPServerTool {
 	return data.NewMCPServerApi().GetAllTools()
 }
+// ─── Risk Control ─────────────────────────────────────────────────────
+
+// GetRiskPortfolio 获取持仓列表（含实时盈亏）
+func (a *App) GetRiskPortfolio() []data.PositionWithPnL {
+	cfg := data.GetSettingConfig()
+	return data.NewPortfolioApi(cfg.Settings).GetPositionsWithPnL(a.getRiskPrices())
+}
+
+// AddPosition 添加持仓
+func (a *App) AddPosition(stockCode, stockName string, costPrice float64, quantity int64, stopLossPct float64) error {
+	pos := models.Position{
+		StockCode:   stockCode,
+		StockName:   stockName,
+		CostPrice:   costPrice,
+		Quantity:    quantity,
+		StopLossPct: stopLossPct,
+	}
+	cfg := data.GetSettingConfig()
+	return data.NewPortfolioApi(cfg.Settings).AddPosition(pos)
+}
+
+// UpdatePosition 更新持仓
+func (a *App) UpdatePosition(id uint, stockCode, stockName string, costPrice float64, quantity int64, stopLossPct, stopLossPrice float64, notes string) error {
+	pos := models.Position{
+		StockCode:     stockCode,
+		StockName:     stockName,
+		CostPrice:     costPrice,
+		Quantity:      quantity,
+		StopLossPct:   stopLossPct,
+		StopLossPrice: stopLossPrice,
+		Notes:         notes,
+	}
+	pos.ID = id
+	cfg := data.GetSettingConfig()
+	return data.NewPortfolioApi(cfg.Settings).UpdatePosition(pos)
+}
+
+// DeletePosition 删除持仓
+func (a *App) DeletePosition(id uint) error {
+	cfg := data.GetSettingConfig()
+	return data.NewPortfolioApi(cfg.Settings).DeletePosition(id)
+}
+
+// GetRiskReport 获取风险评估报告
+func (a *App) GetRiskReport() data.RiskReport {
+	cfg := data.GetSettingConfig()
+	portfolioApi := data.NewPortfolioApi(cfg.Settings)
+	positions := portfolioApi.GetPositionsWithPnL(a.getRiskPrices())
+	cashAmt := portfolioApi.CashAmount()
+	cashPct := 0.0
+	if cfg.Settings.TotalCapital > 0 {
+		cashPct = cashAmt / cfg.Settings.TotalCapital * 100
+	}
+	recentTrades := data.NewTradeApi(cfg.Settings).GetRecentTrades("", 30)
+	return data.NewRiskApi(cfg.Settings).CalculateRiskScore(positions, cashPct, recentTrades)
+}
+
+// CheckDiscipline 检查交易纪律规则
+func (a *App) CheckDiscipline(req data.TradeRequest) data.DisciplineResult {
+	cfg := data.GetSettingConfig()
+	positions := data.NewPortfolioApi(cfg.Settings).GetPositions()
+	return data.NewTradeApi(cfg.Settings).CheckDiscipline(req, positions, a.getRiskPrices())
+}
+
+// AddTrade 添加交易记录
+func (a *App) AddTrade(trade models.Trade) error {
+	cfg := data.GetSettingConfig()
+	if err := data.NewTradeApi(cfg.Settings).AddTrade(trade); err != nil {
+		return err
+	}
+	if trade.Type == "sell" {
+		return a.applySellToPosition(cfg.Settings, trade)
+	}
+	return nil
+}
+
+func (a *App) applySellToPosition(settings *data.Settings, trade models.Trade) error {
+	portfolioApi := data.NewPortfolioApi(settings)
+	for _, pos := range portfolioApi.GetPositions() {
+		if pos.StockCode != trade.StockCode {
+			continue
+		}
+		newQty := pos.Quantity - trade.Quantity
+		if newQty <= 0 {
+			return portfolioApi.DeletePosition(pos.ID)
+		}
+		pos.Quantity = newQty
+		return portfolioApi.UpdatePosition(pos)
+	}
+	return nil
+}
+
+// GetRecentTrades 获取最近交易记录
+func (a *App) GetRecentTrades(stockCode string) []models.Trade {
+	cfg := data.GetSettingConfig()
+	return data.NewTradeApi(cfg.Settings).GetRecentTrades(stockCode, 30)
+}
+
+// RunRiskAnalysis 执行 AI 风控分析
+func (a *App) RunRiskAnalysis() (models.AIAnalysis, error) {
+	cfg := data.GetSettingConfig()
+	portfolioApi := data.NewPortfolioApi(cfg.Settings)
+	positions := portfolioApi.GetPositionsWithPnL(a.getRiskPrices())
+	cashAmt := portfolioApi.CashAmount()
+	cashPct := 0.0
+	if cfg.Settings.TotalCapital > 0 {
+		cashPct = cashAmt / cfg.Settings.TotalCapital * 100
+	}
+	recentTrades := data.NewTradeApi(cfg.Settings).GetRecentTrades("", 30)
+	riskReport := data.NewRiskApi(cfg.Settings).CalculateRiskScore(positions, cashPct, recentTrades)
+
+	return data.NewRiskAIApi(cfg.Settings).RunAnalysis(positions, recentTrades, riskReport, "manual", func(token string) {
+		if a.ctx != nil {
+			runtime.EventsEmit(a.ctx, "riskAiStreamToken", token)
+		}
+	})
+}
+
+// GetLastRiskAnalysis 获取最近一次风控分析结果
+func (a *App) GetLastRiskAnalysis() models.AIAnalysis {
+	cfg := data.GetSettingConfig()
+	return data.NewRiskAIApi(cfg.Settings).GetLastAnalysis()
+}
+
+// getRiskPrices 获取持仓股票的实时价格
+func (a *App) getRiskPrices() map[string]data.PriceInfo {
+	result := make(map[string]data.PriceInfo)
+	positions := []models.Position{}
+	// Get positions directly from DB to avoid circular dependency on settings
+	db.Dao.Model(&models.Position{}).Find(&positions)
+	if len(positions) == 0 {
+		return result
+	}
+	codes := make([]string, 0, len(positions))
+	for _, p := range positions {
+		codes = append(codes, p.StockCode)
+	}
+	stockData, err := data.NewStockDataApi().GetStockCodeRealTimeData(codes...)
+	if err != nil || stockData == nil {
+		return result
+	}
+	for _, s := range *stockData {
+		price, _ := convertor.ToFloat(s.Price)
+		preClose, _ := convertor.ToFloat(s.PreClose)
+		result[s.Code] = data.PriceInfo{
+			Current:   price,
+			PrevClose: preClose,
+		}
+	}
+	return result
+}
+
