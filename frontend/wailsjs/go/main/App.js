@@ -909,3 +909,43 @@ export function UpdateTradingRecord(arg1) {
 export function ValidateCronExpr(arg1) {
   return window['go']['main']['App']['ValidateCronExpr'](arg1);
 }
+
+export function GetRiskPortfolio() {
+  return window['go']['main']['App']['GetRiskPortfolio']();
+}
+
+export function AddPosition(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['AddPosition'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function UpdatePosition(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
+  return window['go']['main']['App']['UpdatePosition'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+}
+
+export function DeletePosition(arg1) {
+  return window['go']['main']['App']['DeletePosition'](arg1);
+}
+
+export function GetRiskReport() {
+  return window['go']['main']['App']['GetRiskReport']();
+}
+
+export function CheckDiscipline(arg1) {
+  return window['go']['main']['App']['CheckDiscipline'](arg1);
+}
+
+export function AddTrade(arg1) {
+  return window['go']['main']['App']['AddTrade'](arg1);
+}
+
+export function GetRecentTrades(arg1) {
+  return window['go']['main']['App']['GetRecentTrades'](arg1);
+}
+
+export function RunRiskAnalysis() {
+  return window['go']['main']['App']['RunRiskAnalysis']();
+}
+
+export function GetLastRiskAnalysis() {
+  return window['go']['main']['App']['GetLastRiskAnalysis']();
+}

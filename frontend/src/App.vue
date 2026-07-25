@@ -984,6 +984,24 @@ const menuOptions = ref([
             RouterLink,
             {
               to: {
+                name: 'riskControl',
+              },
+              onClick: () => {
+                activeKey.value = 'riskControl'
+              },
+            },
+            {default: () => '风控'}
+        ),
+    key: 'riskControl',
+    icon: renderIcon(WarningOutline),
+    show: true,
+  },
+  {
+    label: () =>
+        h(
+            RouterLink,
+            {
+              to: {
                 name: 'about',
                 query: {
                   name:"关于",
