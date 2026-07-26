@@ -5,6 +5,7 @@ import '../api/api_client.dart';
 import '../config/api_config.dart';
 import '../providers/api_url_provider.dart';
 import '../providers/theme_provider.dart';
+import '../utils/notification_helper.dart';
 
 /// 设置页
 class SettingsPage extends ConsumerStatefulWidget {
@@ -184,6 +185,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               trailing: Text(
                 '1.0.0',
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: const Text('推送通知测试'),
+              subtitle: const Text('测试发送本地通知'),
+              trailing: FilledButton(
+                onPressed: () async {
+                  await NotificationHelper.sendPriceAlert(
+                    stockCode: '000001',
+                    stockName: '平安银行',
+                    price: 11.50,
+                    changePercent: 3.25,
+                  );
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('测试通知已发送，请下拉通知栏查看'),
+                      duration: Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                child: const Text('发送'),
               ),
             ),
             ListTile(

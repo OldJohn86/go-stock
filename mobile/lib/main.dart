@@ -4,13 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'pages/splash_page.dart';
 import 'providers/theme_provider.dart';
+import 'utils/notification_helper.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  // 初始化本地通知
+  await NotificationHelper.init();
 
   runApp(const ProviderScope(child: GoStockApp()));
 }
