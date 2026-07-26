@@ -30,7 +30,7 @@ class StockDetailPage extends StatefulWidget {
 }
 
 class _StockDetailPageState extends State<StockDetailPage>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   final StockApi _api = StockApi();
 
@@ -62,6 +62,10 @@ class _StockDetailPageState extends State<StockDetailPage>
   bool _financeLoaded = false;
   String? _financeError;
 
+  // 自动刷新
+  Timer? _autoRefreshTimer;
+  bool _isAppVisible = true;
+
   /// HK stock code detection (mirrors backend IsHKCodeForRoute logic)
   bool get _isHKStock {
     final code = _stock.stockCode.toUpperCase().trim();
@@ -91,6 +95,7 @@ class _StockDetailPageState extends State<StockDetailPage>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _stock = widget.stock;
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(_onTabChanged);
@@ -100,13 +105,54 @@ class _StockDetailPageState extends State<StockDetailPage>
     if (_stock.currentPrice == 0) _fetchRealTimePrice();
     // 默认加载K线
     _fetchKLineData();
+    // 启动自动刷新
+    _startAutoRefresh();
   }
 
   @override
   void dispose() {
+    _autoRefreshTimer?.cancel();
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _isAppVisible = true;
+      _startAutoRefresh();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _isAppVisible = false;
+      _autoRefreshTimer?.cancel();
+      _autoRefreshTimer = null;
+    }
+  }
+
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _onAutoRefresh();
+    });
+  }
+
+  Future<void> _onAutoRefresh() async {
+    if (!_isAppVisible || !mounted) return;
+    final tab = _tabController.index;
+    // 只在K线(0)和分时(1)标签下自动刷新
+    if (tab > 1) return;
+
+    // 刷新实时价格
+    await _fetchRealTimePrice();
+
+    // 根据当前标签刷新数据
+    if (tab == 0 && _klineData.isNotEmpty) {
+      await _fetchKLineData();
+    } else if (tab == 1 && _minuteData.isNotEmpty) {
+      await _fetchMinuteData();
+    }
   }
 
   void _onTabChanged() {

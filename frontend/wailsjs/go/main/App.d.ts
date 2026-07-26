@@ -18,6 +18,8 @@ export function AddCronTask(arg1:data.FollowedStock):Promise<any>;
 
 export function AddGroup(arg1:data.Group):Promise<string>;
 
+export function AddPosition(arg1:string,arg2:string,arg3:number,arg4:number,arg5:number):Promise<void>;
+
 export function AddPrompt(arg1:models.Prompt):Promise<string>;
 
 export function AddPromptTemplate(arg1:models.PromptTemplate):Promise<string>;
@@ -25,6 +27,8 @@ export function AddPromptTemplate(arg1:models.PromptTemplate):Promise<string>;
 export function AddStockConcept(arg1:number,arg2:string):Promise<string>;
 
 export function AddStockGroup(arg1:number,arg2:string):Promise<string>;
+
+export function AddTrade(arg1:models.Trade):Promise<void>;
 
 export function AddTradingRecord(arg1:data.TradingRecord):Promise<number>;
 
@@ -43,6 +47,8 @@ export function CalculateNextRunTimes(arg1:string,arg2:number):Promise<Array<str
 export function ChatWithAgent(arg1:string,arg2:number,arg3:any,arg4:boolean,arg5:number,arg6:boolean,arg7:string,arg8:string):Promise<void>;
 
 export function CheckDeviceBinding(arg1:string,arg2:string):Promise<Record<string, any>>;
+
+export function CheckDiscipline(arg1:data.TradeRequest):Promise<data.DisciplineResult>;
 
 export function CheckFrequentTrading(arg1:string):Promise<Record<string, any>>;
 
@@ -75,6 +81,8 @@ export function DeleteCustomStrategy(arg1:number):Promise<string>;
 export function DeleteDailyOperationPlan(arg1:number):Promise<string>;
 
 export function DeleteMCPServer(arg1:number):Promise<string>;
+
+export function DeletePosition(arg1:number):Promise<void>;
 
 export function DeletePromptTemplate(arg1:number):Promise<string>;
 
@@ -220,6 +228,8 @@ export function GetIndustryMoneyRankSina(arg1:string,arg2:string):Promise<Array<
 
 export function GetIndustryRank(arg1:string,arg2:number):Promise<Array<any>>;
 
+export function GetLastRiskAnalysis():Promise<models.AIAnalysis>;
+
 export function GetLatestTradingDay():Promise<string>;
 
 export function GetMCPServerByID(arg1:number):Promise<models.MCPServer>;
@@ -239,6 +249,12 @@ export function GetPromptTemplateList(arg1:models.PromptTemplateQuery):Promise<m
 export function GetPromptTemplates(arg1:string,arg2:string):Promise<any>;
 
 export function GetRecentDaysMarketStatistic(arg1:number):Promise<Array<models.MarketStatistic>>;
+
+export function GetRecentTrades(arg1:string):Promise<Array<models.Trade>>;
+
+export function GetRiskPortfolio():Promise<Array<data.PositionWithPnL>>;
+
+export function GetRiskReport():Promise<data.RiskReport>;
 
 export function GetSkillByID(arg1:number):Promise<models.Skill>;
 
@@ -318,8 +334,6 @@ export function GlobalStockIndexesReadable():Promise<string>;
 
 export function Greet(arg1:string):Promise<data.StockInfo>;
 
-export function HideToTray():Promise<void>;
-
 export function HotEvent(arg1:number):Promise<any>;
 
 export function HotStock(arg1:string):Promise<any>;
@@ -370,6 +384,8 @@ export function RemoveStockGroup(arg1:string,arg2:string,arg3:number):Promise<st
 
 export function RestartAsAdmin():Promise<void>;
 
+export function RunRiskAnalysis():Promise<models.AIAnalysis>;
+
 export function SaveAIResponseResult(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:number):Promise<void>;
 
 export function SaveAiAssistantSession(arg1:string,arg2:Array<models.AiAssistantMessage>):Promise<void>;
@@ -414,8 +430,6 @@ export function ShareAnalysis(arg1:string,arg2:string):Promise<string>;
 
 export function ShareText(arg1:string,arg2:string):Promise<string>;
 
-export function ShowFromTray():Promise<void>;
-
 export function StartFeishuBot():Promise<string>;
 
 export function StockNotice(arg1:string):Promise<Array<any>>;
@@ -451,6 +465,8 @@ export function UpdateGroup(arg1:number,arg2:string):Promise<string>;
 export function UpdateGroupSort(arg1:number,arg2:number):Promise<boolean>;
 
 export function UpdateMCPServer(arg1:models.MCPServer):Promise<string>;
+
+export function UpdatePosition(arg1:number,arg2:string,arg3:string,arg4:number,arg5:number,arg6:number,arg7:number,arg8:string):Promise<void>;
 
 export function UpdatePromptTemplate(arg1:models.PromptTemplate):Promise<string>;
 

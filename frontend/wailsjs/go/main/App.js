@@ -26,6 +26,10 @@ export function AddGroup(arg1) {
   return window['go']['main']['App']['AddGroup'](arg1);
 }
 
+export function AddPosition(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['AddPosition'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function AddPrompt(arg1) {
   return window['go']['main']['App']['AddPrompt'](arg1);
 }
@@ -40,6 +44,10 @@ export function AddStockConcept(arg1, arg2) {
 
 export function AddStockGroup(arg1, arg2) {
   return window['go']['main']['App']['AddStockGroup'](arg1, arg2);
+}
+
+export function AddTrade(arg1) {
+  return window['go']['main']['App']['AddTrade'](arg1);
 }
 
 export function AddTradingRecord(arg1) {
@@ -76,6 +84,10 @@ export function ChatWithAgent(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
 
 export function CheckDeviceBinding(arg1, arg2) {
   return window['go']['main']['App']['CheckDeviceBinding'](arg1, arg2);
+}
+
+export function CheckDiscipline(arg1) {
+  return window['go']['main']['App']['CheckDiscipline'](arg1);
 }
 
 export function CheckFrequentTrading(arg1) {
@@ -140,6 +152,10 @@ export function DeleteDailyOperationPlan(arg1) {
 
 export function DeleteMCPServer(arg1) {
   return window['go']['main']['App']['DeleteMCPServer'](arg1);
+}
+
+export function DeletePosition(arg1) {
+  return window['go']['main']['App']['DeletePosition'](arg1);
 }
 
 export function DeletePromptTemplate(arg1) {
@@ -430,6 +446,10 @@ export function GetIndustryRank(arg1, arg2) {
   return window['go']['main']['App']['GetIndustryRank'](arg1, arg2);
 }
 
+export function GetLastRiskAnalysis() {
+  return window['go']['main']['App']['GetLastRiskAnalysis']();
+}
+
 export function GetLatestTradingDay() {
   return window['go']['main']['App']['GetLatestTradingDay']();
 }
@@ -468,6 +488,18 @@ export function GetPromptTemplates(arg1, arg2) {
 
 export function GetRecentDaysMarketStatistic(arg1) {
   return window['go']['main']['App']['GetRecentDaysMarketStatistic'](arg1);
+}
+
+export function GetRecentTrades(arg1) {
+  return window['go']['main']['App']['GetRecentTrades'](arg1);
+}
+
+export function GetRiskPortfolio() {
+  return window['go']['main']['App']['GetRiskPortfolio']();
+}
+
+export function GetRiskReport() {
+  return window['go']['main']['App']['GetRiskReport']();
 }
 
 export function GetSkillByID(arg1) {
@@ -626,10 +658,6 @@ export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }
 
-export function HideToTray() {
-  return window['go']['main']['App']['HideToTray']();
-}
-
 export function HotEvent(arg1) {
   return window['go']['main']['App']['HotEvent'](arg1);
 }
@@ -730,6 +758,10 @@ export function RestartAsAdmin() {
   return window['go']['main']['App']['RestartAsAdmin']();
 }
 
+export function RunRiskAnalysis() {
+  return window['go']['main']['App']['RunRiskAnalysis']();
+}
+
 export function SaveAIResponseResult(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['SaveAIResponseResult'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
@@ -818,10 +850,6 @@ export function ShareText(arg1, arg2) {
   return window['go']['main']['App']['ShareText'](arg1, arg2);
 }
 
-export function ShowFromTray() {
-  return window['go']['main']['App']['ShowFromTray']();
-}
-
 export function StartFeishuBot() {
   return window['go']['main']['App']['StartFeishuBot']();
 }
@@ -894,6 +922,10 @@ export function UpdateMCPServer(arg1) {
   return window['go']['main']['App']['UpdateMCPServer'](arg1);
 }
 
+export function UpdatePosition(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
+  return window['go']['main']['App']['UpdatePosition'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+}
+
 export function UpdatePromptTemplate(arg1) {
   return window['go']['main']['App']['UpdatePromptTemplate'](arg1);
 }
@@ -908,44 +940,4 @@ export function UpdateTradingRecord(arg1) {
 
 export function ValidateCronExpr(arg1) {
   return window['go']['main']['App']['ValidateCronExpr'](arg1);
-}
-
-export function GetRiskPortfolio() {
-  return window['go']['main']['App']['GetRiskPortfolio']();
-}
-
-export function AddPosition(arg1, arg2, arg3, arg4, arg5) {
-  return window['go']['main']['App']['AddPosition'](arg1, arg2, arg3, arg4, arg5);
-}
-
-export function UpdatePosition(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
-  return window['go']['main']['App']['UpdatePosition'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-}
-
-export function DeletePosition(arg1) {
-  return window['go']['main']['App']['DeletePosition'](arg1);
-}
-
-export function GetRiskReport() {
-  return window['go']['main']['App']['GetRiskReport']();
-}
-
-export function CheckDiscipline(arg1) {
-  return window['go']['main']['App']['CheckDiscipline'](arg1);
-}
-
-export function AddTrade(arg1) {
-  return window['go']['main']['App']['AddTrade'](arg1);
-}
-
-export function GetRecentTrades(arg1) {
-  return window['go']['main']['App']['GetRecentTrades'](arg1);
-}
-
-export function RunRiskAnalysis() {
-  return window['go']['main']['App']['RunRiskAnalysis']();
-}
-
-export function GetLastRiskAnalysis() {
-  return window['go']['main']['App']['GetLastRiskAnalysis']();
 }

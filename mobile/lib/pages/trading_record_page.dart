@@ -117,10 +117,6 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('交易日志'),
-        centerTitle: true,
-      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

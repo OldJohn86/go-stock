@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,7 +17,8 @@ class StockListPage extends ConsumerStatefulWidget {
   ConsumerState<StockListPage> createState() => _StockListPageState();
 }
 
-class _StockListPageState extends ConsumerState<StockListPage> {
+class _StockListPageState extends ConsumerState<StockListPage>
+    with WidgetsBindingObserver {
   int _tabIndex = 0; // 默认显示"自选"
 
   // 全市场数据
@@ -26,17 +29,66 @@ class _StockListPageState extends ConsumerState<StockListPage> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
+  // 自动刷新
+  Timer? _autoRefreshTimer;
+  bool _isAutoRefreshing = false;
+  bool _isScrolling = false;
+  bool _isAppVisible = true;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // 加载自选列表（由 provider 自动触发），同时加载市场列表
     _fetchMarketStocks();
+    _startAutoRefresh();
   }
 
   @override
   void dispose() {
+    _autoRefreshTimer?.cancel();
     _searchController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _isAppVisible = true;
+      _startAutoRefresh();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _isAppVisible = false;
+      _stopAutoRefresh();
+    }
+  }
+
+  void _startAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _onAutoRefresh();
+    });
+    if (!_isAutoRefreshing) {
+      setState(() => _isAutoRefreshing = true);
+    }
+  }
+
+  void _stopAutoRefresh() {
+    _autoRefreshTimer?.cancel();
+    _autoRefreshTimer = null;
+    if (_isAutoRefreshing) {
+      setState(() => _isAutoRefreshing = false);
+    }
+  }
+
+  Future<void> _onAutoRefresh() async {
+    if (!_isAppVisible || _isScrolling || !mounted) return;
+    if (_tabIndex == 0) {
+      ref.read(followListProvider.notifier).refresh();
+    } else {
+      await _fetchMarketStocks(showLoading: false);
+    }
   }
 
   List<StockRealTime> get _displayedStocks {
@@ -48,11 +100,14 @@ class _StockListPageState extends ConsumerState<StockListPage> {
     ).toList();
   }
 
-  Future<void> _fetchMarketStocks({bool loadMore = false}) async {
+  Future<void> _fetchMarketStocks({
+    bool loadMore = false,
+    bool showLoading = true,
+  }) async {
     if (!loadMore) {
       setState(() {
-        _marketLoading = true;
-        _marketError = null;
+        _marketLoading = showLoading;
+        if (showLoading) _marketError = null;
       });
     }
     try {
@@ -78,7 +133,7 @@ class _StockListPageState extends ConsumerState<StockListPage> {
       if (mounted) {
         setState(() {
           _marketLoading = false;
-          if (!loadMore) {
+          if (!loadMore && showLoading) {
             _marketError = '数据加载失败，请检查网络后重试';
           }
         });
@@ -90,7 +145,8 @@ class _StockListPageState extends ConsumerState<StockListPage> {
   Future<void> _toggleFollow(String stockCode) async {
     final api = StockApi();
     final followAsync = ref.read(followListProvider);
-    final followedCodes = followAsync.valueOrNull?.map((e) => e.stockCode).toSet() ?? {};
+    final followedCodes =
+        followAsync.valueOrNull?.map((e) => e.stockCode).toSet() ?? {};
     if (followedCodes.contains(stockCode)) {
       await api.unfollowStock(stockCode);
     } else {
@@ -109,23 +165,76 @@ class _StockListPageState extends ConsumerState<StockListPage> {
   @override
   Widget build(BuildContext context) {
     final followAsync = ref.watch(followListProvider);
-    final followedCodes = followAsync.valueOrNull?.map((e) => e.stockCode).toSet() ?? {};
+    final followedCodes =
+        followAsync.valueOrNull?.map((e) => e.stockCode).toSet() ?? {};
 
     return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _segmentedButton('自选', 0),
-            const SizedBox(width: 8),
-            _segmentedButton('市场', 1),
-          ],
-        ),
-        centerTitle: true,
+      body: Column(
+        children: [
+          // Segmented buttons header (自选 / 市场)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _segmentedButton('自选', 0),
+                const SizedBox(width: 8),
+                _segmentedButton('市场', 1),
+                if (_isAutoRefreshing) _buildAutoRefreshIndicator(),
+              ],
+            ),
+          ),
+          // Body content
+          Expanded(
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollStartNotification &&
+                    !_isScrolling) {
+                  setState(() => _isScrolling = true);
+                } else if (notification is ScrollEndNotification &&
+                    _isScrolling) {
+                  setState(() => _isScrolling = false);
+                }
+                return false;
+              },
+              child: IndexedStack(
+                index: _tabIndex,
+                children: [
+                  _buildFollowTab(followAsync),
+                  _buildMarketTab(followedCodes),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-      body: _tabIndex == 0
-          ? _buildFollowTab(followAsync)
-          : _buildMarketTab(followedCodes),
+    );
+  }
+
+  Widget _buildAutoRefreshIndicator() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '自动刷新中',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -199,7 +308,9 @@ class _StockListPageState extends ConsumerState<StockListPage> {
           return ListView.builder(
             padding: const EdgeInsets.only(top: 8),
             itemCount: stocks.length,
-            itemBuilder: (_, i) => _buildFollowItem(stocks[i]),
+            itemBuilder: (_, i) => RepaintBoundary(
+              child: _buildFollowItem(stocks[i]),
+            ),
           );
         },
       ),
@@ -256,11 +367,17 @@ class _StockListPageState extends ConsumerState<StockListPage> {
             decoration: InputDecoration(
               hintText: '搜索股票名称或代码',
               filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-              prefixIcon: Icon(Icons.search, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              fillColor: Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.3),
+              prefixIcon:
+                  Icon(Icons.search, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
               suffixIcon: _searchController.text.isNotEmpty
                   ? IconButton(
-                      icon: Icon(Icons.clear, size: 18, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      icon: Icon(Icons.clear,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant),
                       onPressed: () {
                         _searchController.clear();
                         setState(() => _searchQuery = '');
@@ -276,16 +393,19 @@ class _StockListPageState extends ConsumerState<StockListPage> {
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
+                borderSide: BorderSide(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.3)),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 1.5),
+                borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary, width: 1.5),
               ),
             ),
-            onSubmitted: (_) {
-              // 保持本地过滤，不清除搜索
-            },
+            onSubmitted: (_) {},
           ),
         ),
         // 列表
@@ -307,7 +427,6 @@ class _StockListPageState extends ConsumerState<StockListPage> {
                               itemCount: displayed.length + 1,
                               itemBuilder: (_, i) {
                                 if (i == displayed.length) {
-                                  // 仅在非搜索状态下显示"加载更多"
                                   if (_searchQuery.isNotEmpty) {
                                     return const SizedBox.shrink();
                                   }
@@ -315,34 +434,46 @@ class _StockListPageState extends ConsumerState<StockListPage> {
                                       ? const Padding(
                                           padding: EdgeInsets.all(16),
                                           child: Center(
-                                              child: CircularProgressIndicator()),
+                                              child:
+                                                  CircularProgressIndicator()),
                                         )
-                                      : Padding(
-                                          padding: const EdgeInsets.all(16),
-                                          child: Center(
-                                            child: TextButton(
-                                              onPressed: () =>
-                                                  _fetchMarketStocks(loadMore: true),
-                                              child: const Text('加载更多'),
+                                      : RepaintBoundary(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(16),
+                                            child: Center(
+                                              child: TextButton(
+                                                onPressed: () =>
+                                                    _fetchMarketStocks(
+                                                        loadMore: true),
+                                                child: const Text('加载更多'),
+                                              ),
                                             ),
                                           ),
                                         );
                                 }
                                 final stock = displayed[i];
-                                final isFollowed = followedCodes.contains(stock.stockCode);
-                                return StockCard(
-                                  stock: stock,
-                                  onTap: () => _openDetail(stock),
-                                  trailing: IconButton(
-                                    icon: Icon(
-                                      isFollowed ? Icons.star : Icons.star_border,
-                                      color: isFollowed ? Colors.amber : Colors.grey[400],
-                                      size: 22,
+                                final isFollowed =
+                                    followedCodes.contains(stock.stockCode);
+                                return RepaintBoundary(
+                                  child: StockCard(
+                                    stock: stock,
+                                    onTap: () => _openDetail(stock),
+                                    trailing: IconButton(
+                                      icon: Icon(
+                                        isFollowed
+                                            ? Icons.star
+                                            : Icons.star_border,
+                                        color: isFollowed
+                                            ? Colors.amber
+                                            : Colors.grey[400],
+                                        size: 22,
+                                      ),
+                                      tooltip: isFollowed ? '取消关注' : '关注',
+                                      onPressed: () =>
+                                          _toggleFollow(stock.stockCode),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
                                     ),
-                                    tooltip: isFollowed ? '取消关注' : '关注',
-                                    onPressed: () => _toggleFollow(stock.stockCode),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
                                   ),
                                 );
                               },

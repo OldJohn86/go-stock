@@ -295,21 +295,34 @@ class _OperationPlanPageState extends ConsumerState<OperationPlanPage> {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('每日操作计划'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(_showTodayOnly ? Icons.calendar_view_day : Icons.calendar_month),
-            tooltip: '仅今日',
-            onPressed: () {
-              setState(() => _showTodayOnly = !_showTodayOnly);
-              _loadData();
-            },
+      body: Column(
+        children: [
+          // Today filter toggle (was in AppBar actions)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    _showTodayOnly
+                        ? Icons.calendar_view_day
+                        : Icons.calendar_month,
+                  ),
+                  tooltip: '仅今日',
+                  onPressed: () {
+                    setState(() => _showTodayOnly = !_showTodayOnly);
+                    _loadData();
+                  },
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _buildBody(theme),
           ),
         ],
       ),
-      body: _buildBody(theme),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showCreateEditDialog(),
         child: const Icon(Icons.add),

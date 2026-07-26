@@ -255,25 +255,26 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text('AI 分析'),
-        centerTitle: true,
-        actions: [
-          // AI 模型选择器
-          if (_aiModels.isNotEmpty)
-            _buildModelSelector(theme, colorScheme),
-          // 高级选项
-          _buildOptionsMenu(),
-          if (_messages.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: '清空对话',
-              onPressed: _clearChat,
-            ),
-        ],
-      ),
       body: Column(
         children: [
+          // AI 操作按钮（替代原 AppBar actions）
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (_aiModels.isNotEmpty)
+                  _buildModelSelector(theme, colorScheme),
+                _buildOptionsMenu(),
+                if (_messages.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    tooltip: '清空对话',
+                    onPressed: _clearChat,
+                  ),
+              ],
+            ),
+          ),
           // 当前模型指示条
           if (_selectedModel != null) _buildModelIndicator(colorScheme),
           // 消息列表
