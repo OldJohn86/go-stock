@@ -22,13 +22,46 @@ class GoStockApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
 
-    return MaterialApp(
-      title: 'go-stock',
-      debugShowCheckedModeBanner: false,
-      theme: _buildLightTheme(),
-      darkTheme: _buildDarkTheme(),
-      themeMode: themeMode,
-      home: const SplashPage(),
+    final brightness = themeMode == ThemeMode.dark
+        ? Brightness.dark
+        : Brightness.light;
+
+    // 设置 Android/iOS 状态栏风格
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
+        systemNavigationBarColor: brightness == Brightness.dark
+            ? const Color(0xFF121212)
+            : Colors.white,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemStatusBarContrastEnforced: false,
+      ),
+    );
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: brightness == Brightness.dark
+            ? Brightness.light
+            : Brightness.dark,
+        systemNavigationBarColor: brightness == Brightness.dark
+            ? const Color(0xFF121212)
+            : Colors.white,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemStatusBarContrastEnforced: false,
+      ),
+      child: MaterialApp(
+        title: 'go-stock',
+        debugShowCheckedModeBanner: false,
+        theme: _buildLightTheme(),
+        darkTheme: _buildDarkTheme(),
+        themeMode: themeMode,
+        home: const SplashPage(),
+      ),
     );
   }
 

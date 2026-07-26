@@ -218,4 +218,108 @@ class StockApi {
     }
     return resp.message;
   }
+
+  // ==================== 分组相关 ====================
+
+  /// 获取分组列表
+  Future<List<Map<String, dynamic>>> getGroupList() async {
+    final resp = await _client.get('/group/list');
+    if (resp.isSuccess && resp.data != null) {
+      final list = resp.data as List<dynamic>;
+      return list.cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
+
+  /// 创建分组
+  Future<bool> createGroup({required String name, int sort = 0}) async {
+    final resp = await _client.post('/group/create', data: {
+      'name': name,
+      'sort': sort,
+    });
+    return resp.isSuccess;
+  }
+
+  /// 更新分组名称
+  Future<bool> updateGroup({required int id, required String name}) async {
+    final resp = await _client.post('/group/update', data: {
+      'id': id,
+      'name': name,
+    });
+    return resp.isSuccess;
+  }
+
+  /// 删除分组
+  Future<bool> deleteGroup(int id) async {
+    final resp = await _client.post('/group/delete/$id');
+    return resp.isSuccess;
+  }
+
+  /// 更新分组排序
+  Future<bool> updateGroupSort(int id, int newSort) async {
+    final resp = await _client.post('/group/sort', data: {
+      'id': id,
+      'newSort': newSort,
+    });
+    if (resp.isSuccess && resp.data != null) {
+      return (resp.data as Map<String, dynamic>)['success'] as bool? ?? false;
+    }
+    return false;
+  }
+
+  /// 获取分组下的股票代码列表
+  Future<List<String>> getGroupStockCodes(int groupId) async {
+    final resp = await _client.get('/group/stocks', params: {
+      'groupId': groupId.toString(),
+    });
+    if (resp.isSuccess && resp.data != null) {
+      final list = resp.data as List<dynamic>;
+      return list
+          .map((e) => (e as Map<String, dynamic>)['stockCode'] as String)
+          .toList();
+    }
+    return [];
+  }
+
+  /// 获取分组下的股票列表（含实时行情）
+  Future<List<StockRealTime>> getGroupStocksWithPrices(
+      int groupId) async {
+    final codes = await getGroupStockCodes(groupId);
+    if (codes.isEmpty) return [];
+    return getRealTimeBatch(codes);
+  }
+
+  /// 添加股票到分组
+  Future<bool> addStockToGroup({
+    required int groupId,
+    required String stockCode,
+  }) async {
+    final resp = await _client.post('/group/add-stock', data: {
+      'groupId': groupId,
+      'stockCode': stockCode,
+    });
+    return resp.isSuccess;
+  }
+
+  /// 从分组移除股票
+  Future<bool> removeStockFromGroup({
+    required int groupId,
+    required String stockCode,
+  }) async {
+    final resp = await _client.post('/group/remove-stock', data: {
+      'groupId': groupId,
+      'stockCode': stockCode,
+    });
+    return resp.isSuccess;
+  }
+
+  /// 获取所有分组-股票归属关系
+  Future<List<Map<String, dynamic>>> getAllGroupStocks() async {
+    final resp = await _client.get('/group/all-stocks');
+    if (resp.isSuccess && resp.data != null) {
+      final list = resp.data as List<dynamic>;
+      return list.cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
 }
