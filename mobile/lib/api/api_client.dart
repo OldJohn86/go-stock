@@ -17,13 +17,16 @@ typedef NetworkStateCallback = void Function({
 
 class ApiClient {
   late final Dio _dio;
+  String _baseUrl = ApiConfig.apiV1;
 
   /// Maximum number of retries for connection/timeout errors.
   static const int _maxRetries = 2;
 
+  String get baseUrl => _baseUrl;
+
   ApiClient._() {
     _dio = Dio(BaseOptions(
-      baseUrl: ApiConfig.apiV1,
+      baseUrl: _baseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 30),
       headers: {
@@ -36,6 +39,23 @@ class ApiClient {
       responseBody: true,
       logPrint: (o) => debugPrint('[API] $o'),
     ));
+  }
+
+  /// Update the base URL at runtime (e.g. from user settings).
+  ///
+  /// Returns `true` if the URL actually changed, `false` if it's the same.
+  bool setBaseUrl(String newUrl) {
+    // Ensure the URL ends with /api/v1
+    final normalized = newUrl.endsWith('/api/v1')
+        ? newUrl
+        : newUrl.endsWith('/')
+            ? '${newUrl}api/v1'
+            : '$newUrl/api/v1';
+    if (normalized == _baseUrl) return false;
+    _baseUrl = normalized;
+    _dio.options.baseUrl = normalized;
+    debugPrint('[API] Base URL updated to: $normalized');
+    return true;
   }
 
   static final ApiClient _instance = ApiClient._();

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/api_client.dart';
 import '../config/api_config.dart';
+import '../providers/api_url_provider.dart';
 import '../providers/theme_provider.dart';
 
 /// 设置页
@@ -14,8 +15,15 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
-  final _baseUrlController = TextEditingController();
+  final _aiBaseUrlController = TextEditingController();
   final _apiKeyController = TextEditingController();
+
+  /// Backend URL editing
+  final _backendUrlController = TextEditingController();
+  bool _backendUrlChanged = false;
+  bool _backendTesting = false;
+  String? _backendTestResult;
+  bool _backendTestSuccess = false;
 
   bool _isLoading = false;
   String? _testMessage;
@@ -27,7 +35,78 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   void initState() {
     super.initState();
+    // Initialize backend URL field with current value
+    final currentUrl = ApiClient().baseUrl.replaceAll('/api/v1', '');
+    _backendUrlController.text = currentUrl;
+    _backendUrlController.addListener(_onBackendUrlChanged);
     _loadAiConfigs();
+  }
+
+  void _onBackendUrlChanged() {
+    final currentUrl = ApiClient().baseUrl.replaceAll('/api/v1', '');
+    final changed = _backendUrlController.text.trim() != currentUrl;
+    if (changed != _backendUrlChanged) {
+      setState(() => _backendUrlChanged = changed);
+    }
+  }
+
+  Future<void> _saveBackendUrl() async {
+    final url = _backendUrlController.text.trim();
+    if (url.isEmpty) return;
+    ApiClient().setBaseUrl(url);
+    await ref.read(apiUrlProvider.notifier).setUrl(url);
+    setState(() {
+      _backendUrlChanged = false;
+      _backendTestResult = null;
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('后端地址已更新'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _resetBackendUrl() async {
+    await ref.read(apiUrlProvider.notifier).resetToDefault();
+    final defaultUrl = ApiConfig.baseUrl;
+    ApiClient().setBaseUrl(defaultUrl);
+    _backendUrlController.text = defaultUrl;
+    setState(() {
+      _backendUrlChanged = false;
+      _backendTestResult = null;
+    });
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('已恢复默认地址'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _testBackendConnection() async {
+    setState(() {
+      _backendTesting = true;
+      _backendTestResult = null;
+    });
+    try {
+      final resp = await ApiClient().get('/settings');
+      setState(() {
+        _backendTestSuccess = resp.isSuccess;
+        _backendTestResult = resp.isSuccess ? '连接成功' : resp.message;
+      });
+    } catch (e) {
+      setState(() {
+        _backendTestSuccess = false;
+        _backendTestResult = '连接失败: $e';
+      });
+    } finally {
+      setState(() => _backendTesting = false);
+    }
   }
 
   Future<void> _loadAiConfigs() async {
@@ -47,7 +126,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _testConnection() async {
-    final baseUrl = _baseUrlController.text.trim();
+    final baseUrl = _aiBaseUrlController.text.trim();
     final apiKey = _apiKeyController.text.trim();
 
     if (baseUrl.isEmpty) {
@@ -84,8 +163,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   @override
   void dispose() {
-    _baseUrlController.dispose();
+    _aiBaseUrlController.dispose();
     _apiKeyController.dispose();
+    _backendUrlController.dispose();
     super.dispose();
   }
 
@@ -119,6 +199,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
           const SizedBox(height: 16),
 
+          // Backend Connection Config
+          _buildSection('后端连接', [
+            _buildBackendUrlTile(),
+          ]),
+
+          const SizedBox(height: 16),
+
           // Theme Mode Selector
           _buildSection('主题模式', [
             _buildThemeModeTile(),
@@ -129,7 +216,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           // AI Service Test
           _buildSection('AI 模型服务测试', [
             TextField(
-              controller: _baseUrlController,
+              controller: _aiBaseUrlController,
               decoration: InputDecoration(
                 labelText: '接口地址',
                 hintText: 'https://api.openai.com 或 http://localhost:11434',
@@ -240,6 +327,105 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             else
               ..._aiConfigs.map((cfg) => _buildAiConfigCard(cfg)),
           ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBackendUrlTile() {
+    final theme = Theme.of(context);
+    final currentUrl = ApiClient().baseUrl;
+
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _backendUrlController,
+            decoration: InputDecoration(
+              labelText: '后端地址',
+              hintText: 'http://192.168.x.x:8080',
+              prefixIcon: const Icon(Icons.dns_outlined),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  onPressed: _backendUrlChanged ? _saveBackendUrl : null,
+                  icon: const Icon(Icons.save, size: 18),
+                  label: const Text('保存'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: _resetBackendUrl,
+                icon: const Icon(Icons.restore, size: 18),
+                label: const Text('重置'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: _backendTesting ? null : _testBackendConnection,
+                icon: _backendTesting
+                    ? const SizedBox(
+                        width: 16, height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.wifi_find, size: 18),
+                label: Text(_backendTesting ? '测试中' : '测试'),
+              ),
+            ],
+          ),
+          if (_backendTestResult != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: _backendTestSuccess
+                    ? Colors.green.withValues(alpha: 0.08)
+                    : Colors.red.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _backendTestSuccess
+                      ? Colors.green.withValues(alpha: 0.3)
+                      : Colors.red.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _backendTestSuccess
+                        ? Icons.check_circle
+                        : Icons.error_outline,
+                    color: _backendTestSuccess ? Colors.green : Colors.red,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _backendTestResult!,
+                      style: TextStyle(
+                        color: _backendTestSuccess
+                            ? Colors.green[800]
+                            : Colors.red[800],
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 4),
+          Text(
+            '当前: $currentUrl',
+            style: TextStyle(fontSize: 11, color: theme.disabledColor),
+          ),
         ],
       ),
     );
