@@ -13,12 +13,14 @@ class IndicatorChart extends StatelessWidget {
   final List<KLineData> data;
   final IndicatorType type;
   final double height;
+  final Brightness? brightness;
 
   const IndicatorChart({
     super.key,
     required this.data,
     required this.type,
     this.height = 120,
+    this.brightness,
   });
 
   @override
@@ -26,6 +28,7 @@ class IndicatorChart extends StatelessWidget {
     if (type == IndicatorType.none || data.length < 5) {
       return const SizedBox.shrink();
     }
+    final effectiveBrightness = brightness ?? Theme.of(context).brightness;
     return SizedBox(
       height: height,
       child: Column(
@@ -34,7 +37,7 @@ class IndicatorChart extends StatelessWidget {
           Expanded(
             child: CustomPaint(
               size: const Size(double.infinity, double.infinity),
-              painter: _IndicatorPainter(data: data, type: type),
+              painter: _IndicatorPainter(data: data, type: type, brightness: effectiveBrightness),
             ),
           ),
         ],
@@ -46,8 +49,15 @@ class IndicatorChart extends StatelessWidget {
 class _IndicatorPainter extends CustomPainter {
   final List<KLineData> data;
   final IndicatorType type;
+  final Brightness brightness;
 
-  _IndicatorPainter({required this.data, required this.type});
+  _IndicatorPainter({required this.data, required this.type, required this.brightness});
+
+  Color get backgroundColor =>
+      brightness == Brightness.dark ? const Color(0xFF1E1E1E) : Colors.white;
+
+  Color get gridTextColor =>
+      brightness == Brightness.dark ? Colors.white54 : Colors.grey;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -59,13 +69,13 @@ class _IndicatorPainter extends CustomPainter {
     final plotW = w - left - right;
 
     // 背景
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = Colors.white);
+    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = backgroundColor);
 
     // 中线
     canvas.drawLine(
       Offset(left, h / 2),
       Offset(w - right, h / 2),
-      Paint()..color = Colors.grey.withValues(alpha: 0.3)..strokeWidth = 0.5,
+      Paint()..color = gridTextColor.withValues(alpha: 0.3)..strokeWidth = 0.5,
     );
 
     switch (type) {
@@ -103,8 +113,8 @@ class _IndicatorPainter extends CustomPainter {
 
     final scale = plotH / 2 / maxAbs;
 
-    final paintHistUp = Paint()..color = Colors.red.withValues(alpha: 0.6);
-    final paintHistDn = Paint()..color = Colors.green.withValues(alpha: 0.6);
+    final paintHistUp = Paint()..color = const Color(0xFFE53935).withValues(alpha: 0.6);
+    final paintHistDn = Paint()..color = const Color(0xFF00BFA5).withValues(alpha: 0.6);
     final paintDif = Paint()
       ..color = Colors.blue
       ..strokeWidth = 1.5
@@ -226,7 +236,7 @@ class _IndicatorPainter extends CustomPainter {
 
     // 超买超卖线
     final dashPaint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.3)
+      ..color = gridTextColor.withValues(alpha: 0.3)
       ..strokeWidth = 0.5;
     for (final yRatio in [0.3, 0.7]) {
       final y = padTop + yRatio * plotH;
@@ -279,5 +289,5 @@ class _IndicatorPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _IndicatorPainter old) =>
-      old.data != data || old.type != type;
+      old.data != data || old.type != type || old.brightness != brightness;
 }

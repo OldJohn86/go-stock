@@ -42,7 +42,7 @@
         新建持仓
       </n-button>
       <n-button type="info" @click="showAddTrade = true" size="small">
-        <template #icon><n-icon :component="SwapOutline" /></template>
+        <template #icon><n-icon :component="SwapHorizontalOutline" /></template>
         记录交易
       </n-button>
       <n-button type="warning" @click="runRiskAnalysis" size="small" :loading="aiLoading">
@@ -178,7 +178,7 @@ import { ref, computed, onMounted, h } from 'vue'
 import { useMessage, useDialog } from 'naive-ui'
 import {
   AddOutline,
-  SwapOutline,
+  SwapHorizontalOutline,
   SparklesOutline,
   RefreshOutline,
   WalletOutline,

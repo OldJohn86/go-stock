@@ -57,7 +57,11 @@ class StockCard extends StatelessWidget {
                   children: [
                     Text(
                       stock.stockName,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
                     const SizedBox(height: 3),
                     Text(

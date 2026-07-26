@@ -197,12 +197,16 @@ class _StockListPageState extends ConsumerState<StockListPage>
                 }
                 return false;
               },
-              child: IndexedStack(
-                index: _tabIndex,
-                children: [
-                  _buildFollowTab(followAsync),
-                  _buildMarketTab(followedCodes),
-                ],
+              child: AnimatedCrossFade(
+                firstChild: _buildFollowTab(followAsync),
+                secondChild: _buildMarketTab(followedCodes),
+                crossFadeState: _tabIndex == 0
+                    ? CrossFadeState.showFirst
+                    : CrossFadeState.showSecond,
+                duration: const Duration(milliseconds: 250),
+                sizeCurve: Curves.easeInOut,
+                firstCurve: Curves.easeInOut,
+                secondCurve: Curves.easeInOut,
               ),
             ),
           ),
@@ -212,6 +216,7 @@ class _StockListPageState extends ConsumerState<StockListPage>
   }
 
   Widget _buildAutoRefreshIndicator() {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: Row(
@@ -220,8 +225,8 @@ class _StockListPageState extends ConsumerState<StockListPage>
           Container(
             width: 8,
             height: 8,
-            decoration: const BoxDecoration(
-              color: Colors.green,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
               shape: BoxShape.circle,
             ),
           ),
@@ -230,7 +235,7 @@ class _StockListPageState extends ConsumerState<StockListPage>
             '自动刷新中',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
         ],
@@ -272,13 +277,13 @@ class _StockListPageState extends ConsumerState<StockListPage>
             Icon(
               index == 0 ? Icons.star : Icons.explore,
               size: 16,
-              color: selected ? Colors.white : Colors.grey[500],
+              color: selected ? Colors.white : colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 5),
             Text(
               label,
               style: TextStyle(
-                color: selected ? Colors.white : Colors.grey[600],
+                color: selected ? Colors.white : colorScheme.onSurfaceVariant,
                 fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 14,
               ),

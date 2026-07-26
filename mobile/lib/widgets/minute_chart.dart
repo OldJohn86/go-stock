@@ -27,6 +27,7 @@ class MinuteChart extends StatelessWidget {
         child: const Center(child: Text('暂无分时数据')),
       );
     }
+    final brightness = Theme.of(context).brightness;
     return SizedBox(
       height: height,
       child: LayoutBuilder(
@@ -37,6 +38,7 @@ class MinuteChart extends StatelessWidget {
               data: data,
               preClose: preClose,
               date: date,
+              brightness: brightness,
             ),
           );
         },
@@ -49,6 +51,7 @@ class _MinuteChartPainter extends CustomPainter {
   final List<MinuteData> data;
   final double preClose;
   final String date;
+  final Brightness brightness;
 
   static const double leftPadding = 50;
   static const double rightPadding = 10;
@@ -59,7 +62,42 @@ class _MinuteChartPainter extends CustomPainter {
     required this.data,
     this.preClose = 0,
     this.date = '',
+    this.brightness = Brightness.light,
   });
+
+  // Chinese stock market convention: red = up, green = down
+  static const Color _upColor = Color(0xFFE53935);
+  static const Color _downColor = Color(0xFF00BFA5);
+
+  // -------- Theme-aware getters --------
+
+  bool get _isDark => brightness == Brightness.dark;
+
+  List<Color> get _bgGradient {
+    if (_isDark) {
+      return [
+        Colors.white.withValues(alpha: 0.04),
+        Colors.white.withValues(alpha: 0.01),
+      ];
+    }
+    return [
+      Colors.grey.withValues(alpha: 0.04),
+      Colors.grey.withValues(alpha: 0.01),
+    ];
+  }
+
+  Color get _gridColor => _isDark ? Colors.white24 : Colors.black12;
+
+  Color get _axisColor => _isDark ? Colors.white38 : Colors.grey[500]!;
+
+  Color get _preCloseColor => _isDark ? Colors.white38 : Colors.grey;
+
+  Color get _labelBgColor =>
+      _isDark ? Colors.white.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.6);
+
+  Color get _labelTextColor => _isDark ? Colors.white : Colors.black87;
+
+  // -------- Layout and extremes --------
 
   late double _w;
   late double _h;
@@ -85,7 +123,8 @@ class _MinuteChartPainter extends CustomPainter {
   }
 
   void _computeExtremes() {
-    _preClosePrice = preClose > 0 ? preClose : (data.isNotEmpty ? data.first.price : 0);
+    _preClosePrice =
+        preClose > 0 ? preClose : (data.isNotEmpty ? data.first.price : 0);
 
     _maxPrice = -double.infinity;
     _minPrice = double.infinity;
@@ -117,8 +156,7 @@ class _MinuteChartPainter extends CustomPainter {
   }
 
   double _priceToY(double price) {
-    return _priceAreaH -
-        ((price - _minPrice) / _priceRange) * _priceAreaH;
+    return _priceAreaH - ((price - _minPrice) / _priceRange) * _priceAreaH;
   }
 
   double _volumeToH(double volume) {
@@ -129,6 +167,8 @@ class _MinuteChartPainter extends CustomPainter {
     if (data.length <= 1) return _plotLeft + _plotW / 2;
     return _plotLeft + (index / (data.length - 1)) * _plotW;
   }
+
+  // -------- Paint entry point --------
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -143,15 +183,14 @@ class _MinuteChartPainter extends CustomPainter {
     _drawAxisLabels(canvas);
   }
 
+  // -------- Drawing methods --------
+
   void _drawBackground(Canvas canvas) {
     final bgPaint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [
-          Colors.grey.withValues(alpha: 0.04),
-          Colors.grey.withValues(alpha: 0.01),
-        ],
+        colors: _bgGradient,
       ).createShader(Rect.fromLTWH(_plotLeft, 0, _plotW, _priceAreaH));
     canvas.drawRect(
       Rect.fromLTWH(_plotLeft, 0, _plotW, _priceAreaH),
@@ -161,7 +200,7 @@ class _MinuteChartPainter extends CustomPainter {
 
   void _drawGrid(Canvas canvas) {
     final paint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.15)
+      ..color = _gridColor
       ..strokeWidth = 0.5;
 
     for (int i = 0; i <= 5; i++) {
@@ -187,7 +226,7 @@ class _MinuteChartPainter extends CustomPainter {
   void _drawPreCloseLine(Canvas canvas) {
     final y = _priceToY(_preClosePrice);
     final paint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.4)
+      ..color = _preCloseColor
       ..strokeWidth = 0.8
       ..style = PaintingStyle.stroke;
 
@@ -201,13 +240,18 @@ class _MinuteChartPainter extends CustomPainter {
     final labelTp = TextPainter(
       text: TextSpan(
         text: preCloseLabel,
-        style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w500),
+        style: TextStyle(
+          fontSize: 9,
+          color: _labelTextColor,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    final labelBg = Paint()..color = Colors.grey.withValues(alpha: 0.6);
+    final labelBg = Paint()..color = _labelBgColor;
     final labelRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(_plotRight, y - labelTp.height / 2 - 2, labelTp.width + 8, labelTp.height + 4),
+      Rect.fromLTWH(
+        _plotRight, y - labelTp.height / 2 - 2, labelTp.width + 8, labelTp.height + 4),
       const Radius.circular(4),
     );
     canvas.drawRRect(labelRect, labelBg);
@@ -233,7 +277,7 @@ class _MinuteChartPainter extends CustomPainter {
     fillPath.close();
 
     final isUp = data.last.price >= _preClosePrice;
-    final fillColor = isUp ? const Color(0xFF00BFA5) : const Color(0xFFFF5252);
+    final fillColor = isUp ? _upColor : _downColor;
 
     // 填充
     canvas.drawPath(
@@ -277,9 +321,8 @@ class _MinuteChartPainter extends CustomPainter {
       final barH = _volumeToH(d.volume);
       final barW = (_plotW / data.length * 0.5).clamp(1.0, 8.0);
 
-      final color = d.price >= _preClosePrice
-          ? const Color(0xFF00BFA5)
-          : const Color(0xFFFF5252);
+      final color =
+          d.price >= _preClosePrice ? _upColor : _downColor;
 
       canvas.drawRect(
         Rect.fromLTRB(
@@ -294,23 +337,23 @@ class _MinuteChartPainter extends CustomPainter {
   }
 
   void _drawAxisLabels(Canvas canvas) {
-    final labelStyle = TextStyle(fontSize: 10, color: Colors.grey[500]);
+    // -------- 左侧价格标尺 --------
+    final priceLabelStyle = TextStyle(fontSize: 10, color: _axisColor);
 
-    // 价格标签
     for (int i = 0; i <= 5; i++) {
       final price = _maxPrice - (_priceRange * i / 5);
       final y = _priceAreaH * i / 5;
       final tp = TextPainter(
         text: TextSpan(
           text: price.toStringAsFixed(2),
-          style: labelStyle,
+          style: priceLabelStyle,
         ),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(canvas, Offset(_plotLeft - tp.width - 4, y - tp.height / 2));
     }
 
-    // 涨跌幅标签（右侧）
+    // -------- 右侧涨跌幅标尺（更醒目） --------
     for (int i = 0; i <= 5; i++) {
       final price = _maxPrice - (_priceRange * i / 5);
       final changePct = _preClosePrice > 0
@@ -321,10 +364,10 @@ class _MinuteChartPainter extends CustomPainter {
         final cp = TextPainter(
           text: TextSpan(
             text: '${changePct >= 0 ? "+" : ""}${changePct.toStringAsFixed(2)}%',
-            style: labelStyle.copyWith(
-              color: changePct >= 0
-                  ? const Color(0xFF00BFA5)
-                  : const Color(0xFFFF5252),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: changePct >= 0 ? _upColor : _downColor,
             ),
           ),
           textDirection: TextDirection.ltr,
@@ -333,7 +376,7 @@ class _MinuteChartPainter extends CustomPainter {
       }
     }
 
-    // 时间标签
+    // -------- 底部时间标签 --------
     if (data.length > 1) {
       final indices = [
         0,
@@ -347,7 +390,10 @@ class _MinuteChartPainter extends CustomPainter {
         final label = data[i].time;
         final x = _indexToX(i);
         final tp = TextPainter(
-          text: TextSpan(text: label, style: labelStyle),
+          text: TextSpan(
+            text: label,
+            style: TextStyle(fontSize: 10, color: _axisColor),
+          ),
           textDirection: TextDirection.ltr,
         )..layout();
         tp.paint(
@@ -357,12 +403,15 @@ class _MinuteChartPainter extends CustomPainter {
       }
     }
 
-    // 日期
+    // -------- 日期标签 --------
     if (date.isNotEmpty) {
       final dateTp = TextPainter(
         text: TextSpan(
           text: date,
-          style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+          style: TextStyle(
+            fontSize: 11,
+            color: _isDark ? Colors.white38 : Colors.grey[500],
+          ),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -372,5 +421,6 @@ class _MinuteChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MinuteChartPainter oldDelegate) =>
-      oldDelegate.data != data;
+      oldDelegate.data != data ||
+      oldDelegate.brightness != brightness;
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'pages/home_page.dart';
+import 'pages/splash_page.dart';
 import 'providers/theme_provider.dart';
 
 void main() {
@@ -28,7 +28,7 @@ class GoStockApp extends ConsumerWidget {
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),
       themeMode: themeMode,
-      home: const HomePage(),
+      home: const SplashPage(),
     );
   }
 

@@ -497,7 +497,7 @@ class _OperationPlanPageState extends ConsumerState<OperationPlanPage> {
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      elevation: 1.5,
+      elevation: theme.cardTheme.elevation ?? 0.5,
       shadowColor: Colors.black.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: InkWell(
@@ -685,7 +685,7 @@ class _OperationPlanPageState extends ConsumerState<OperationPlanPage> {
                   _ActionButton(
                     icon: Icons.delete_outline,
                     label: '删除',
-                    color: Colors.red[400]!,
+                    color: theme.colorScheme.error,
                     onTap: () => _deletePlan(plan),
                   ),
                 ],
@@ -1171,14 +1171,14 @@ class _PlanDetailPage extends StatelessWidget {
           children: [
             // 基本信息
             _buildSection(theme, '基本信息', [
-              _buildInfoRow('日期', plan.planDate),
-              _buildInfoRow('股票', '${plan.stockName} (${plan.stockCode})'),
-              _buildInfoRow('方向', plan.directionLabel),
+              _buildInfoRow('日期', plan.planDate, theme),
+              _buildInfoRow('股票', '${plan.stockName} (${plan.stockCode})', theme),
+              _buildInfoRow('方向', plan.directionLabel, theme),
               if (plan.plannedPrice > 0)
-                _buildInfoRow('计划价格', '¥${plan.plannedPrice.toStringAsFixed(2)}'),
+                _buildInfoRow('计划价格', '¥${plan.plannedPrice.toStringAsFixed(2)}', theme),
               if (plan.plannedQuantity > 0)
-                _buildInfoRow('计划数量', '${plan.plannedQuantity}股'),
-              _buildInfoRow('状态', plan.statusLabel),
+                _buildInfoRow('计划数量', '${plan.plannedQuantity}股', theme),
+              _buildInfoRow('状态', plan.statusLabel, theme),
             ]),
             if (plan.reason.isNotEmpty) ...[
               const SizedBox(height: 16),
@@ -1238,11 +1238,11 @@ class _PlanDetailPage extends StatelessWidget {
                           children: [
                             Text(s.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                             const SizedBox(height: 4),
-                            _buildInfoRow('条件', s.condition),
-                            _buildInfoRow('操作', s.action),
-                            if (s.position.isNotEmpty) _buildInfoRow('仓位', s.position),
-                            if (s.buyPriceRange.isNotEmpty) _buildInfoRow('买入区间', s.buyPriceRange),
-                            if (s.stopLossPrice.isNotEmpty) _buildInfoRow('止损价', s.stopLossPrice),
+                            _buildInfoRow('条件', s.condition, theme),
+                            _buildInfoRow('操作', s.action, theme),
+                            if (s.position.isNotEmpty) _buildInfoRow('仓位', s.position, theme),
+                            if (s.buyPriceRange.isNotEmpty) _buildInfoRow('买入区间', s.buyPriceRange, theme),
+                            if (s.stopLossPrice.isNotEmpty) _buildInfoRow('止损价', s.stopLossPrice, theme),
                           ],
                         ),
                       ),
@@ -1275,7 +1275,7 @@ class _PlanDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -1283,7 +1283,7 @@ class _PlanDetailPage extends StatelessWidget {
         children: [
           SizedBox(
             width: 70,
-            child: Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+            child: Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
           ),
           Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
         ],

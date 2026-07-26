@@ -183,7 +183,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               title: const Text('版本'),
               trailing: Text(
                 '1.0.0',
-                style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
               ),
             ),
             ListTile(
@@ -265,20 +265,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _testSuccess
-                      ? Colors.green.withValues(alpha: 0.08)
-                      : Colors.red.withValues(alpha: 0.08),
+                      ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.08)
+                      : Theme.of(context).colorScheme.error.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
                     color: _testSuccess
-                        ? Colors.green.withValues(alpha: 0.3)
-                        : Colors.red.withValues(alpha: 0.3),
+                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)
+                        : Theme.of(context).colorScheme.error.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
                       _testSuccess ? Icons.check_circle : Icons.error_outline,
-                      color: _testSuccess ? Colors.green : Colors.red,
+                      color: _testSuccess
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.error,
                       size: 20,
                     ),
                     const SizedBox(width: 10),
@@ -287,8 +289,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         _testMessage!,
                         style: TextStyle(
                           color: _testSuccess
-                              ? Colors.green[800]
-                              : Colors.red[800],
+                              ? Theme.of(context).colorScheme.primary
+                              : Theme.of(context).colorScheme.error,
                           fontSize: 13,
                         ),
                       ),
@@ -313,10 +315,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             else if (_aiConfigs.isEmpty)
               ListTile(
                 leading: Icon(Icons.cloud_off_outlined,
-                    color: Colors.grey[400]),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
                 title: Text(
                   '暂无 AI 模型配置',
-                  style: TextStyle(color: Colors.grey[600]),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 subtitle: const Text(
                   '请在桌面端添加 AI 模型服务配置',
@@ -386,13 +388,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: _backendTestSuccess
-                    ? Colors.green.withValues(alpha: 0.08)
-                    : Colors.red.withValues(alpha: 0.08),
+                    ? theme.colorScheme.primary.withValues(alpha: 0.08)
+                    : theme.colorScheme.error.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: _backendTestSuccess
-                      ? Colors.green.withValues(alpha: 0.3)
-                      : Colors.red.withValues(alpha: 0.3),
+                      ? theme.colorScheme.primary.withValues(alpha: 0.3)
+                      : theme.colorScheme.error.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
@@ -401,7 +403,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     _backendTestSuccess
                         ? Icons.check_circle
                         : Icons.error_outline,
-                    color: _backendTestSuccess ? Colors.green : Colors.red,
+                    color: _backendTestSuccess
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.error,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
@@ -410,8 +414,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       _backendTestResult!,
                       style: TextStyle(
                         color: _backendTestSuccess
-                            ? Colors.green[800]
-                            : Colors.red[800],
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.error,
                         fontSize: 13,
                       ),
                     ),

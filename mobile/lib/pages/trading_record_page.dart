@@ -174,32 +174,24 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
     final s = _stats!;
     final isProfit = s.totalProfit >= 0;
 
-    return Container(
+    return Card(
       margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primaryContainer,
-            theme.colorScheme.primary.withValues(alpha: 0.08),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.colorScheme.outline.withValues(alpha: 0.2),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primaryContainer,
+              theme.colorScheme.primary.withValues(alpha: 0.08),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
-      child: Column(
-        children: [
+        ),
+        child: Column(
+          children: [
           // 总盈亏
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -284,7 +276,8 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
           ],
         ],
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildStatItem({
