@@ -70,6 +70,20 @@ func StartServer(addr string) {
 			plan.POST("/status", HandleUpdateDailyOperationPlanStatus)
 		}
 
+		// 自选股分组
+		group := v1.Group("/group")
+		{
+			group.GET("/list", HandleGetGroupList)
+			group.POST("/create", HandleCreateGroup)
+			group.POST("/update", HandleUpdateGroup)
+			group.POST("/delete/:id", HandleDeleteGroup)
+			group.POST("/sort", HandleUpdateGroupSort)
+			group.GET("/stocks", HandleGetGroupStocks)
+			group.POST("/add-stock", HandleAddStockToGroup)
+			group.POST("/remove-stock", HandleRemoveStockFromGroup)
+			group.GET("/all-stocks", HandleGetAllGroupStocks)
+		}
+
 		// 设置
 		settings := v1.Group("/settings")
 		{
