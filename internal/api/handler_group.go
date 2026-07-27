@@ -8,11 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// HandleGetGroupList 获取分组列表
+// HandleGetGroupList 获取分组列表（含各分组股票数量）
 // GET /api/v1/group/list
 func HandleGetGroupList(c *gin.Context) {
 	api := data.NewStockGroupApi(nil)
-	list := api.GetGroupList()
+	list := api.GetGroupListWithCount()
 	if list == nil {
 		success(c, []interface{}{})
 		return

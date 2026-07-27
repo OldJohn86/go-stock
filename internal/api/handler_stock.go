@@ -102,17 +102,55 @@ func HandleGetStockRealTimeBatch(c *gin.Context) {
 }
 
 // HandleGetAllStocks 获取全部股票列表（含技术指标筛选）
-// GET /api/v1/stock/list?page=1&pageSize=20&name=
+// GET /api/v1/stock/list?page=1&pageSize=20&name=&macdGoldenFork=true&kdjGoldenFork=true
 func HandleGetAllStocks(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "20"))
 	name := c.Query("name")
 
-	// 解析可选的 technicalIndicators 参数（JSON 字符串）
-	var ti models.TechnicalIndicators
-	if tiStr := c.Query("technicalIndicators"); tiStr != "" {
-		// 简单字段映射（可选）
+	ti := models.TechnicalIndicators{
+		MACDGOLDENFORK:     c.Query("macdGoldenFork") == "true",
+		KDJGOLDENFORK:      c.Query("kdjGoldenFork") == "true",
+		BREAKTHROUGH:       c.Query("breakThrough") == "true",
+		LOWFUNDSINFLOW:     c.Query("lowFundsInflow") == "true",
+		HIGHFUNDSOUTFLOW:   c.Query("highFundsOutflow") == "true",
+		BREAKUPMA5DAYS:     c.Query("breakUpMa5Days") == "true",
+		LONGAVGARRAY:       c.Query("longAvgArray") == "true",
+		SHORTAVGARRAY:      c.Query("shortAvgArray") == "true",
+		UPPERLARGEVOLUME:   c.Query("upperLargeVolume") == "true",
+		DOWNNARROWVOLUME:   c.Query("downNarrowVolume") == "true",
+		ONEDAYANGLINE:      c.Query("oneDayangLine") == "true",
+		TWODAYANGLINES:     c.Query("twoDayangLines") == "true",
+		RISESUN:            c.Query("riseSun") == "true",
+		POWERFULGUN:        c.Query("powerFulgun") == "true",
+		RESTOREJUSTICE:     c.Query("restoreJustice") == "true",
+		DOWN7DAYS:          c.Query("down7Days") == "true",
+		UPPER8DAYS:         c.Query("upper8Days") == "true",
+		UPPER9DAYS:         c.Query("upper9Days") == "true",
+		HEAVENRULE:         c.Query("heavenRule") == "true",
+		UPSIDEVOLUME:       c.Query("upsideVolume") == "true",
+		BEARISHENGULFING:   c.Query("bearishEngulfing") == "true",
+		REVERSINGHAMMER:    c.Query("reversingHammer") == "true",
+		SHOOTINGSTAR:       c.Query("shootingStar") == "true",
+		EVENINGSTAR:        c.Query("eveningStar") == "true",
+		FIRSTDAWN:          c.Query("firstDawn") == "true",
+		PREGNANT:           c.Query("pregnant") == "true",
+		BLACKCLOUDTOPS:     c.Query("blackCloudTops") == "true",
+		MORNINGSTAR:        c.Query("morningStar") == "true",
+		NARROWFINISH:       c.Query("narrowFinish") == "true",
 	}
+
+	uppDays, _ := strconv.Atoi(c.Query("uppDays"))
+	ti.UPP_DAYS = uppDays
+
+	concernRank, _ := strconv.Atoi(c.Query("concernRank7Days"))
+	ti.CONCERN_RANK_7DAYS = concernRank
+
+	upNday, _ := strconv.Atoi(c.Query("upNday"))
+	ti.UPNDAY = upNday
+
+	downNday, _ := strconv.Atoi(c.Query("downNday"))
+	ti.DOWNNDAY = downNday
 
 	api := data.NewStockDataApi()
 	result := api.GetAllStocks(page, pageSize, name, ti)

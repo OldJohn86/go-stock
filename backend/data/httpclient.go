@@ -92,6 +92,9 @@ func ConfigureFromSettings(config *SettingConfig) {
 		DisableHTTPClientProxy()
 	}
 
+	// 刷新 FCM 推送服务配置
+	GetFcmApi().ReloadConfig()
+
 	if config.CrawlTimeOut > 0 {
 		UpdateHTTPClientTimeout(time.Duration(config.CrawlTimeOut) * time.Second)
 	} else {

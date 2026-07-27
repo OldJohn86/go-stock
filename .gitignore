@@ -117,4 +117,9 @@ frontend/package.json.md5
 /build-dev.bat
 /build-prod.bat
 go-stock-server
+/go-stock
+/server
 mobile/data/
+data/data/*.db*
+data/data/*.db-shm
+data/data/*.db-wal

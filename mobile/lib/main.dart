@@ -59,7 +59,7 @@ class GoStockApp extends ConsumerWidget {
         systemStatusBarContrastEnforced: false,
       ),
       child: MaterialApp(
-        title: 'go-stock',
+        title: 'goldstock',
         debugShowCheckedModeBanner: false,
         theme: _buildLightTheme(),
         darkTheme: _buildDarkTheme(),

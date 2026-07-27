@@ -1,17 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/stock_api.dart';
+import 'stock_provider.dart';
 
 /// 分组数据模型
 class GroupModel {
   final int id;
   final String name;
   final int sort;
+  final int stockCount;
 
   GroupModel({
     required this.id,
     required this.name,
     required this.sort,
+    this.stockCount = 0,
   });
 
   factory GroupModel.fromJson(Map<String, dynamic> json) {
@@ -19,17 +22,19 @@ class GroupModel {
       id: json['ID'] as int? ?? json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
       sort: json['sort'] as int? ?? 0,
+      stockCount: json['stockCount'] as int? ?? 0,
     );
   }
 }
 
 class GroupListNotifier extends StateNotifier<List<GroupModel>> {
   final Ref ref;
-  final _api = StockApi();
 
   GroupListNotifier(this.ref) : super([]) {
     load();
   }
+
+  StockApi get _api => ref.read(stockApiProvider);
 
   Future<void> load() async {
     try {
@@ -68,6 +73,22 @@ class GroupListNotifier extends StateNotifier<List<GroupModel>> {
       state = newOrder;
     }
     return allOk;
+  }
+
+  /// 将股票添加到指定分组
+  Future<bool> addStockToGroup({
+    required int groupId,
+    required String stockCode,
+  }) async {
+    return _api.addStockToGroup(groupId: groupId, stockCode: stockCode);
+  }
+
+  /// 从分组移除股票
+  Future<bool> removeStockFromGroup({
+    required int groupId,
+    required String stockCode,
+  }) async {
+    return _api.removeStockFromGroup(groupId: groupId, stockCode: stockCode);
   }
 }
 

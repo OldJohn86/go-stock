@@ -23,6 +23,7 @@ class _OperationPlanPageState extends ConsumerState<OperationPlanPage> {
   int _page = 1;
   String? _statusFilter;
   bool _showTodayOnly = false;
+  String? _selectedDate;
   String? _error;
 
   @override
@@ -58,7 +59,7 @@ class _OperationPlanPageState extends ConsumerState<OperationPlanPage> {
         page: _page,
         pageSize: 20,
         status: _statusFilter,
-        planDate: _showTodayOnly ? _todayDate() : null,
+        planDate: _selectedDate ?? (_showTodayOnly ? _todayDate() : null),
       );
 
       if (mounted) {
@@ -95,7 +96,7 @@ class _OperationPlanPageState extends ConsumerState<OperationPlanPage> {
         page: _page,
         pageSize: 20,
         status: _statusFilter,
-        planDate: _showTodayOnly ? _todayDate() : null,
+        planDate: _selectedDate ?? (_showTodayOnly ? _todayDate() : null),
       );
 
       if (mounted) {
@@ -233,6 +234,61 @@ class _OperationPlanPageState extends ConsumerState<OperationPlanPage> {
     );
   }
 
+  void _showDatePickerDialog() {
+    final initial = _selectedDate != null
+        ? DateTime.tryParse(_selectedDate!) ?? DateTime.now()
+        : DateTime.now();
+    showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime.now().subtract(const Duration(days: 30)),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+    ).then((date) {
+      if (date != null && mounted) {
+        setState(() {
+          _selectedDate =
+              '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+          _showTodayOnly = false;
+        });
+        _loadData();
+      }
+    });
+  }
+
+  void _copyPlan(DailyOperationPlan plan) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _PlanFormSheet(
+        api: _api,
+        existing: DailyOperationPlan(
+          id: 0,
+          planDate: _todayDate(),
+          stockCode: plan.stockCode,
+          stockName: plan.stockName,
+          direction: plan.direction,
+          plannedPrice: plan.plannedPrice,
+          plannedQuantity: plan.plannedQuantity,
+          reason: plan.reason,
+          overallJudgment: plan.overallJudgment,
+          summary: plan.summary,
+          riskWarning: plan.riskWarning,
+          status: 'pending',
+          scenarios: plan.scenarios,
+          remarks: plan.remarks,
+        ),
+        onSaved: () {
+          _loadData();
+          Navigator.pop(ctx);
+        },
+      ),
+    );
+  }
+
   void _showStatusSelector(DailyOperationPlan plan) {
     final statuses = <String>['pending', 'executing', 'completed', 'expired'];
     final labels = <String>['待执行', '执行中', '已完成', '已过期'];
@@ -303,18 +359,43 @@ class _OperationPlanPageState extends ConsumerState<OperationPlanPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                // 日历筛选
+                IconButton(
+                  icon: Icon(
+                    _selectedDate != null ? Icons.calendar_month : Icons.calendar_today,
+                    color: _selectedDate != null ? theme.colorScheme.primary : null,
+                  ),
+                  tooltip: _selectedDate != null ? '筛选日期: $_selectedDate' : '选择日期',
+                  onPressed: _showDatePickerDialog,
+                ),
                 IconButton(
                   icon: Icon(
                     _showTodayOnly
                         ? Icons.calendar_view_day
-                        : Icons.calendar_month,
+                        : Icons.date_range,
+                    color: _showTodayOnly ? theme.colorScheme.primary : null,
                   ),
                   tooltip: '仅今日',
                   onPressed: () {
-                    setState(() => _showTodayOnly = !_showTodayOnly);
+                    setState(() {
+                      _showTodayOnly = !_showTodayOnly;
+                      if (_showTodayOnly) _selectedDate = null;
+                    });
                     _loadData();
                   },
                 ),
+                if (_selectedDate != null || _showTodayOnly)
+                  IconButton(
+                    icon: const Icon(Icons.clear, size: 18),
+                    tooltip: '清除筛选',
+                    onPressed: () {
+                      setState(() {
+                        _selectedDate = null;
+                        _showTodayOnly = false;
+                      });
+                      _loadData();
+                    },
+                  ),
               ],
             ),
           ),
@@ -681,6 +762,13 @@ class _OperationPlanPageState extends ConsumerState<OperationPlanPage> {
                     onTap: () => _showStatusSelector(plan),
                   ),
                   const SizedBox(width: 4),
+                  // Copy button
+                  _ActionButton(
+                    icon: Icons.content_copy,
+                    label: '复制',
+                    color: theme.colorScheme.primary,
+                    onTap: () => _copyPlan(plan),
+                  ),
                   // Delete button
                   _ActionButton(
                     icon: Icons.delete_outline,

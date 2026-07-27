@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../models/kline_data.dart';
 import '../models/minute_data.dart';
 import '../models/stock_info.dart';
@@ -5,7 +7,12 @@ import '../utils/cache_manager.dart';
 import 'api_client.dart';
 
 class StockApi {
-  final _client = ApiClient();
+  late final ApiClient _client;
+
+  StockApi() : _client = ApiClient();
+
+  @visibleForTesting
+  StockApi.withClient(this._client);
 
   /// 获取单只股票实时行情
   Future<StockRealTime?> getRealTimePrice(String stockCode) async {
@@ -313,12 +320,55 @@ class StockApi {
     return resp.isSuccess;
   }
 
+  // ==================== 大盘指数 ====================
+
+  /// 获取主要大盘指数实时行情
+  Future<List<StockRealTime>> getIndexList() async {
+    final resp = await _client.get('/index/list');
+    if (resp.isSuccess && resp.data != null) {
+      final list = resp.data as List<dynamic>;
+      return list
+          .map((e) => StockRealTime.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
+  }
+
   /// 获取所有分组-股票归属关系
   Future<List<Map<String, dynamic>>> getAllGroupStocks() async {
     final resp = await _client.get('/group/all-stocks');
     if (resp.isSuccess && resp.data != null) {
       final list = resp.data as List<dynamic>;
       return list.cast<Map<String, dynamic>>();
+    }
+    return [];
+  }
+
+  /// 技术指标筛选股票
+  /// [filters] 为要启用的筛选键列表，如 ['macdGoldenFork', 'kdjGoldenFork']
+  Future<List<Map<String, dynamic>>> getScreenerResults({
+    String keyword = '',
+    List<String> filters = const [],
+  }) async {
+    final params = <String, String>{
+      'page': '1',
+      'pageSize': '50',
+    };
+    if (keyword.isNotEmpty) params['name'] = keyword;
+    for (final key in filters) {
+      params[key] = 'true';
+    }
+
+    final resp = await _client.get('/stock/list', params: params);
+    if (resp.isSuccess && resp.data != null) {
+      final data = resp.data as Map<String, dynamic>;
+      final result = data['result'] as Map<String, dynamic>?;
+      if (result != null) {
+        final list = result['data'] as List<dynamic>?;
+        if (list != null) {
+          return list.cast<Map<String, dynamic>>();
+        }
+      }
     }
     return [];
   }

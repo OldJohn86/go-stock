@@ -20,6 +20,10 @@ type Settings struct {
 	FeishuPushEnable bool   `json:"feishuPushEnable"`
 	FeishuRobot      string `json:"feishuRobot"`
 	FeishuSecret     string `json:"feishuSecret" gorm:"column:feishu_secret"`
+	// FCM 推送配置
+	FcmPushEnable    bool   `json:"fcmPushEnable" gorm:"column:fcm_push_enable"`
+	FcmProjectId     string `json:"fcmProjectId" gorm:"column:fcm_project_id"`
+	FcmServerKey     string `json:"fcmServerKey" gorm:"column:fcm_server_key"`
 	// 飞书应用机器人（接收消息+AI回复，长连接模式，与 FeishuPush 自定义机器人推送独立）
 	FeishuBotEnable        bool   `json:"feishuBotEnable"`
 	FeishuAppID            string `json:"feishuAppId" gorm:"column:feishu_app_id"`
@@ -136,6 +140,9 @@ func UpdateConfig(s *SettingConfig) string {
 			"feishu_push_enable":         s.FeishuPushEnable,
 			"feishu_robot":               s.FeishuRobot,
 			"feishu_secret":              s.FeishuSecret,
+				"fcm_push_enable":            s.FcmPushEnable,
+				"fcm_project_id":             s.FcmProjectId,
+				"fcm_server_key":             s.FcmServerKey,
 			"feishu_bot_enable":          s.FeishuBotEnable,
 			"feishu_app_id":              s.FeishuAppID,
 			"feishu_app_secret":          s.FeishuAppSecret,

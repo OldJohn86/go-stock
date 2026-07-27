@@ -29,13 +29,13 @@ class GroupManagePage extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     '点击下方按钮创建第一个分组',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
                   ),
                 ],
               ),
             )
           : ReorderableListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 80),
               itemCount: groups.length,
               onReorderItem: (oldIndex, newIndex) async {
                 final correctedNewIndex =
@@ -49,28 +49,31 @@ class GroupManagePage extends ConsumerWidget {
               },
               itemBuilder: (context, index) {
                 final group = groups[index];
+                final groupColors = [
+                  colorScheme.primary,
+                  Colors.teal,
+                  Colors.orange,
+                  Colors.purple,
+                  Colors.indigo,
+                  Colors.pink,
+                  Colors.cyan,
+                  Colors.brown,
+                ];
+                final colorIndex = group.id % groupColors.length;
+                final groupColor = groupColors[colorIndex];
+
                 return Card(
                   key: ValueKey('group_${group.id}'),
-                  child: ListTile(
-                    leading: Icon(Icons.folder, color: colorScheme.primary),
-                    title: Text(group.name),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 20),
-                          tooltip: '编辑',
-                          onPressed: () => _showEditDialog(context, ref, group),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, size: 20),
-                          tooltip: '删除',
-                          onPressed: () =>
-                              _showDeleteConfirm(context, ref, group),
-                        ),
-                        const SizedBox(width: 4),
-                      ],
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  elevation: 1,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: groupColor.withValues(alpha: 0.2),
                     ),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -79,6 +82,68 @@ class GroupManagePage extends ConsumerWidget {
                         ),
                       );
                     },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      child: Row(
+                        children: [
+                          // 分组图标
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: groupColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.folder,
+                              color: groupColor,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // 分组名称 + 股票数量
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  group.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${group.stockCount} 只股票',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Theme.of(context).disabledColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // 编辑 / 删除
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _iconBtn(context, Icons.edit_outlined, '编辑', () =>
+                                  _showEditDialog(context, ref, group)),
+                              const SizedBox(width: 4),
+                              _iconBtn(context, Icons.delete_outline, '删除', () =>
+                                  _showDeleteConfirm(context, ref, group)),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.drag_handle,
+                                color: Theme.of(context).disabledColor,
+                                size: 20,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               },
@@ -88,6 +153,15 @@ class GroupManagePage extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('新建分组'),
       ),
+    );
+  }
+
+  Widget _iconBtn(BuildContext context, IconData icon, String tooltip, VoidCallback onTap) {
+    return IconButton(
+      icon: Icon(icon, size: 20),
+      tooltip: tooltip,
+      onPressed: onTap,
+      visualDensity: VisualDensity.compact,
     );
   }
 

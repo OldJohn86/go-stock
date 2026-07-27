@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <application
         android:usesCleartextTraffic="true"
-        android:label="go_stock_mobile"
+        android:label="Goldstock"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher">

@@ -50,7 +50,17 @@ func StartServer(addr string) {
 		trade := v1.Group("/trading")
 		{
 			trade.GET("/records", HandleGetTradingRecordList)
+			trade.GET("/records/:id", HandleGetTradingRecordById)
+			trade.POST("/records", HandleCreateTradingRecord)
+			trade.PUT("/records/:id", HandleUpdateTradingRecord)
+			trade.POST("/records/delete/:id", HandleDeleteTradingRecord)
 			trade.GET("/statistics", HandleGetTradingRecordStatistics)
+			trade.POST("/save", HandleSaveTradingRecord)
+			trade.POST("/delete/:id", HandleDeleteTradingRecord)
+			trade.GET("/export", HandleExportTradingRecords)
+			trade.GET("/backtest", HandleGetBacktestAnalysis)
+			trade.GET("/daily-pnl", HandleGetDailyPnL)
+			trade.GET("/frequent-check", HandleCheckFrequentTrading)
 		}
 
 		// AI 对话
@@ -84,6 +94,67 @@ func StartServer(addr string) {
 			group.GET("/all-stocks", HandleGetAllGroupStocks)
 		}
 
+		// 大盘指数
+		indices := v1.Group("/index")
+		{
+			indices.GET("/list", HandleGetIndexList)
+		}
+
+		// 市场数据
+		market := v1.Group("/market")
+		{
+			market.GET("/industry-money-rank", HandleGetIndustryMoneyRank)
+			market.GET("/industry-valuation", HandleGetIndustryValuation)
+			market.GET("/concept-fund-flow", HandleGetConceptFundFlowRank)
+			market.GET("/sector-stocks", HandleGetSectorStocks)
+			market.GET("/hot-stocks", HandleGetHotStocks)
+			market.GET("/hot-events", HandleGetHotEvents)
+			market.GET("/hot-topics", HandleGetHotTopics)
+			market.GET("/long-tiger", HandleGetLongTiger)
+			market.GET("/stock-notice", HandleGetStockNotice)
+		}
+
+		// 价格预警
+		alert := v1.Group("/alert")
+		{
+			alert.GET("/setting/:stockCode", HandleGetAlarmSetting)
+			alert.POST("/setting", HandleSetAlarmSetting)
+			alert.GET("/list", HandleGetAlarmList)
+		}
+
+		// AI 推荐股票
+		aiRecommend := v1.Group("/ai-recommend")
+		{
+			aiRecommend.GET("/list", HandleGetAiRecommendStocksList)
+			aiRecommend.POST("/alert", HandleUpdateAiRecommendAlert)
+			aiRecommend.POST("/delete/:id", HandleDeleteAiRecommendStock)
+		}
+
+		// 大盘仪表盘
+		dashboard := v1.Group("/dashboard")
+		{
+			dashboard.GET("/overview", HandleGetDashboardOverview)
+			dashboard.GET("/portfolio", HandleGetDashboardPortfolio)
+		}
+
+		// 行情雷达 & 预警监控
+		radar := v1.Group("/radar")
+		{
+			radar.GET("/overview", HandleGetMarketRadar)
+			radar.GET("/money-flow", HandleGetRadarMoneyFlow)
+			radar.GET("/uplimit-hot", HandleGetRadarUplimitHot)
+			radar.GET("/monitor-status", HandleGetAlertMonitorStatus)
+			radar.POST("/monitor-start", HandleStartAlertMonitor)
+			radar.POST("/monitor-stop", HandleStopAlertMonitor)
+
+			// 推送设备 Token 管理
+			push := v1.Group("/push")
+			{
+				push.POST("/register-token", HandleRegisterPushToken)
+				push.POST("/unregister-token", HandleUnregisterPushToken)
+			}
+		}
+
 		// 设置
 		settings := v1.Group("/settings")
 		{
@@ -91,6 +162,77 @@ func StartServer(addr string) {
 			settings.GET("/ai-configs", HandleGetAiConfigs)
 			settings.GET("/fetch-models", HandleFetchAiModels)
 			settings.GET("/test-connection", HandleTestAiConnection)
+		}
+
+		tdx := v1.Group("/tdx")
+		{
+			tdx.GET("/minute-time/:code", HandleGetTdxMinuteTime)
+			tdx.GET("/history-minute-time/:code", HandleGetTdxHistoryMinuteTime)
+			tdx.GET("/transactions/:code", HandleGetTdxTransactions)
+			tdx.GET("/all-transactions/:code", HandleGetTdxAllTransactions)
+			tdx.GET("/history-transactions/:code", HandleGetTdxHistoryTransactions)
+			tdx.GET("/call-auction/:code", HandleGetTdxCallAuction)
+			tdx.GET("/company-info/:code", HandleGetTdxCompanyInfo)
+			tdx.GET("/finance-info/:code", HandleGetTdxFinanceInfo)
+			tdx.GET("/xdxr-info/:code", HandleGetTdxXDXRInfo)
+			tdx.GET("/company-categories/:code", HandleGetTdxCompanyCategoryList)
+			tdx.GET("/company-category-content/:code", HandleGetTdxCompanyCategoryContent)
+			tdx.GET("/symbol-boards/:code", HandleGetTdxSymbolBelongBoard)
+			tdx.GET("/chip-distribution/:code", HandleGetChipDistribution)
+			tdx.GET("/kline/:code", HandleGetEastMoneyKLine)
+			tdx.GET("/kline-fallback/:code", HandleGetKLineWithFallback)
+		}
+
+		// K线形态识别
+		kline := v1.Group("/kline")
+		{
+			kline.GET("/pattern/:code", HandleAnalyzeKLinePattern)
+			kline.GET("/pattern-summary/:code", HandleGetKLinePatternSummary)
+		}
+
+		// 风控管理
+		dashboardRisk := v1.Group("/dashboard")
+		{
+			dashboardRisk.GET("/risk-report", HandleGetRiskReport)
+			dashboardRisk.GET("/positions", HandleGetPositions)
+			dashboardRisk.POST("/position/add", HandleAddPosition)
+			dashboardRisk.POST("/position/update", HandleUpdatePosition)
+			dashboardRisk.POST("/position/delete/:id", HandleDeletePosition)
+			dashboardRisk.GET("/recent-trades", HandleGetRecentTrades)
+		}
+
+		// 风险分析（来自 goldstock 合并）
+		risk := v1.Group("/risk")
+		{
+			risk.GET("/portfolio", HandleGetRiskPortfolio)
+			risk.POST("/discipline", HandleCheckDiscipline)
+			risk.POST("/trades", HandleAddTrade)
+			risk.POST("/analysis/run", HandleRunRiskAnalysis)
+			risk.GET("/analysis/last", HandleGetLastRiskAnalysis)
+		}
+
+		// 定时任务管理
+		cronTasks := v1.Group("/cron-tasks")
+		{
+			cronTasks.GET("/list", HandleGetCronTaskList)
+			cronTasks.POST("/create", HandleCreateCronTask)
+			cronTasks.POST("/update", HandleUpdateCronTask)
+			cronTasks.POST("/delete/:id", HandleDeleteCronTask)
+			cronTasks.POST("/enable/:id", HandleEnableCronTask)
+			cronTasks.POST("/execute/:id", HandleExecuteCronTaskNow)
+			cronTasks.GET("/types", HandleGetCronTaskTypes)
+		}
+
+		// MCP 服务管理
+		mcpServers := v1.Group("/mcp-servers")
+		{
+			mcpServers.GET("/list", HandleGetMCPServerList)
+			mcpServers.POST("/create", HandleCreateMCPServer)
+			mcpServers.POST("/update", HandleUpdateMCPServer)
+			mcpServers.POST("/delete/:id", HandleDeleteMCPServer)
+			mcpServers.POST("/enable/:id", HandleEnableMCPServer)
+			mcpServers.POST("/test/:id", HandleTestMCPServer)
+			mcpServers.GET("/tools/:id", HandleGetMCPServerTools)
 		}
 	}
 

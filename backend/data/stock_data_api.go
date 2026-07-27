@@ -163,24 +163,24 @@ type StockBasic struct {
 }
 
 type FollowedStock struct {
-	StockCode          string
-	Name               string
-	Volume             int64
-	CostPrice          float64
-	Price              float64
-	PriceChange        float64
-	ChangePercent      float64
-	AlarmChangePercent float64
-	AlarmPrice         float64
-	Time               time.Time
-	Sort               int64
-	Cron               *string
-	IsDel              soft_delete.DeletedAt `gorm:"softDelete:flag"`
-	Groups             []GroupStock          `gorm:"foreignKey:StockCode;references:StockCode"`
-	AiConfigId         int
-	EntryPrice         float64
-	TakeProfitPrice    float64
-	StopLossPrice      float64
+	StockCode          string               `json:"股票代码"`
+	Name               string               `json:"股票名称"`
+	Volume             int64                `json:"成交的股票数"`
+	CostPrice          float64              `json:"cost_price"`
+	Price              float64              `json:"当前价格"`
+	PriceChange        float64              `json:"价格变动"`
+	ChangePercent      float64              `json:"涨跌幅"`
+	AlarmChangePercent float64              `json:"alarm_change_percent"`
+	AlarmPrice         float64              `json:"alarm_price"`
+	Time               time.Time            `json:"时间"`
+	Sort               int64                `json:"sort"`
+	Cron               *string              `json:"cron"`
+	IsDel              soft_delete.DeletedAt `gorm:"softDelete:flag" json:"is_del"`
+	Groups             []GroupStock          `gorm:"foreignKey:StockCode;references:StockCode" json:"-"`
+	AiConfigId         int                  `json:"ai_config_id"`
+	EntryPrice         float64              `json:"entry_price"`
+	TakeProfitPrice    float64              `json:"take_profit_price"`
+	StopLossPrice      float64              `json:"stop_loss_price"`
 }
 
 func (receiver FollowedStock) TableName() string {
@@ -540,7 +540,7 @@ func (receiver StockDataApi) UnFollow(stockCode string) string {
 		stockCode = strings.Replace(stockCode, "gb_", "us", 1)
 		stockCode = strings.Replace(stockCode, "GB_", "us", 1)
 	}
-	db.Dao.Model(&FollowedStock{}).Where("stock_code = ?", strings.ToLower(stockCode)).Delete(&FollowedStock{})
+	db.Dao.Model(&FollowedStock{}).Where("stock_code = ?", strings.ToLower(stockCode)).Delete(nil)
 	return "取消关注成功"
 }
 
@@ -573,6 +573,31 @@ func (receiver StockDataApi) SetAlarmChangePercent(val, alarmPrice float64, stoc
 		return "设置失败"
 	}
 	return "设置成功"
+}
+
+func (receiver StockDataApi) GetAlarmSetting(stockCode string) (*FollowedStock, error) {
+	if strutil.HasPrefixAny(stockCode, []string{"gb_"}) {
+		stockCode = strings.ToUpper(stockCode)
+		stockCode = strings.Replace(stockCode, "gb_", "us", 1)
+		stockCode = strings.Replace(stockCode, "GB_", "us", 1)
+	}
+	var stock FollowedStock
+	if err := db.Dao.Model(&FollowedStock{}).Where("stock_code = ?", strings.ToLower(stockCode)).First(&stock).Error; err != nil {
+		return nil, err
+	}
+	return &stock, nil
+}
+
+func (receiver StockDataApi) GetAlarmList() ([]FollowedStock, error) {
+	var stocks []FollowedStock
+	if err := db.Dao.Model(&FollowedStock{}).
+		Where("alarm_change_percent != ?", 0).
+		Or("alarm_price != ?", 0).
+		Order("sort asc").
+		Find(&stocks).Error; err != nil {
+		return nil, err
+	}
+	return stocks, nil
 }
 
 func (receiver StockDataApi) SetStockSort(newSort int64, stockCode string) {
@@ -2254,7 +2279,12 @@ func (receiver StockDataApi) GetStockHolderNum(stockCode string) *models.StockHo
 }
 
 func (receiver StockDataApi) GetIndustryValuation(bkName string) *models.IndustryValuationResp {
-	url := "https://datacenter-web.eastmoney.com/api/data/v1/get?callback=data&reportName=RPT_VALUEINDUSTRY_STA&columns=ALL&quoteColumns=&source=WEB&client=WEB&pageNumber=1&filter=%28BOARD_NAME%3D%22" + url2.QueryEscape(bkName) + "%22%29&_=" + strconv.Itoa(time.Now().Nanosecond())
+	baseUrl := "https://datacenter-web.eastmoney.com/api/data/v1/get?callback=data&reportName=RPT_VALUEINDUSTRY_STA&columns=ALL&quoteColumns=&source=WEB&client=WEB&pageNumber=1&pageSize=500"
+	if bkName != "" {
+		baseUrl += "&filter=%28BOARD_NAME%3D%22" + url2.QueryEscape(bkName) + "%22%29"
+	}
+	baseUrl += "&_=" + strconv.Itoa(time.Now().Nanosecond())
+	url := baseUrl
 	resp, err := receiver.client.SetTimeout(time.Duration(receiver.config.CrawlTimeOut)*time.Second).R().
 		SetHeader("Host", "datacenter-web.eastmoney.com").
 		SetHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0").

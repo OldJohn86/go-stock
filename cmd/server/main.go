@@ -81,4 +81,5 @@ func autoMigrate() {
 	db.Dao.AutoMigrate(&models.ConceptFundFlow{})
 	db.Dao.AutoMigrate(&models.StockInfoHK{})
 	db.Dao.AutoMigrate(&models.StockInfoUS{})
+		db.Dao.AutoMigrate(&models.DeviceToken{})
 }

@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'dart:math';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../api/api_client.dart';
+import '../api/push_api.dart';
 import '../config/api_config.dart';
 import '../providers/api_url_provider.dart';
 import '../providers/theme_provider.dart';
@@ -33,6 +38,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   List<Map<String, dynamic>> _aiConfigs = [];
   bool _loadingConfigs = false;
 
+  /// Push notification state
+  String _deviceId = '';
+  bool _pushRegistered = false;
+  bool _pushLoading = false;
+
   @override
   void initState() {
     super.initState();
@@ -41,6 +51,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     _backendUrlController.text = currentUrl;
     _backendUrlController.addListener(_onBackendUrlChanged);
     _loadAiConfigs();
+    _initPush();
+  }
+
+  Future<void> _initPush() async {
+    final prefs = await SharedPreferences.getInstance();
+    final deviceId = prefs.getString('push_device_id') ?? '';
+    final registered = prefs.getBool('push_registered') ?? false;
+    if (mounted) {
+      setState(() {
+        _deviceId = deviceId;
+        _pushRegistered = registered;
+      });
+    }
   }
 
   void _onBackendUrlChanged() {
@@ -189,8 +212,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             ListTile(
               leading: const Icon(Icons.notifications_outlined),
-              title: const Text('推送通知测试'),
-              subtitle: const Text('测试发送本地通知'),
+              title: const Text('本地通知测试'),
+              subtitle: const Text('发送一条测试通知到通知栏'),
               trailing: FilledButton(
                 onPressed: () async {
                   await NotificationHelper.sendPriceAlert(
@@ -233,6 +256,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           // Theme Mode Selector
           _buildSection('主题模式', [
             _buildThemeModeTile(),
+          ]),
+
+          const SizedBox(height: 16),
+
+          // Push Notification
+          _buildSection('推送通知', [
+            _buildPushNotificationTile(),
           ]),
 
           const SizedBox(height: 16),
@@ -506,6 +536,157 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  Widget _buildPushNotificationTile() {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Status indicator
+          Row(
+            children: [
+              Icon(
+                _pushRegistered ? Icons.check_circle : Icons.notifications_off_outlined,
+                size: 20,
+                color: _pushRegistered ? Colors.green : theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                _pushRegistered ? '已注册推送服务' : '未注册推送服务',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: _pushRegistered ? Colors.green : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _deviceId.isNotEmpty ? '设备 ID: ${_deviceId.length > 20 ? "${_deviceId.substring(0, 20)}..." : _deviceId}' : '尚未生成设备标识',
+            style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  onPressed: _pushLoading ? null : (_pushRegistered ? _unregisterDevice : _registerDevice),
+                  icon: _pushLoading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Icon(_pushRegistered ? Icons.logout : Icons.login, size: 18),
+                  label: Text(_pushLoading ? '处理中...' : (_pushRegistered ? '注销设备' : '注册设备')),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final sm = ScaffoldMessenger.of(context);
+                  await NotificationHelper.sendPriceAlert(
+                    stockCode: '000001',
+                    stockName: '平安银行',
+                    price: 11.50,
+                    changePercent: 3.25,
+                  );
+                  if (!context.mounted) return;
+                  sm.showSnackBar(
+                    const SnackBar(
+                      content: Text('测试通知已发送，请下拉通知栏查看'),
+                      duration: Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.notifications_active, size: 18),
+                label: const Text('测试'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '注册后，当服务端触发推送事件（如预警提醒、任务完成）时，将通过 FCM 推送到本设备。需要服务端配置 Firebase 项目。',
+            style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _generateDeviceId() {
+    final random = Random();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final rand = random.nextInt(999999);
+    return 'dart_${timestamp}_$rand';
+  }
+
+  Future<void> _registerDevice() async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _pushLoading = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      String deviceId = prefs.getString('push_device_id') ?? '';
+      if (deviceId.isEmpty) {
+        deviceId = _generateDeviceId();
+        await prefs.setString('push_device_id', deviceId);
+      }
+
+      // Register on the server
+      final api = PushApi();
+      final ok = await api.registerToken(deviceId, 'android');
+      if (mounted) {
+        if (ok) {
+          await prefs.setBool('push_registered', true);
+          setState(() {
+            _deviceId = deviceId;
+            _pushRegistered = true;
+          });
+          messenger.showSnackBar(
+            const SnackBar(content: Text('设备已注册推送服务'), behavior: SnackBarBehavior.floating),
+          );
+        } else {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('注册失败，请检查后端连接'), behavior: SnackBarBehavior.floating),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('注册失败: $e'), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _pushLoading = false);
+    }
+  }
+
+  Future<void> _unregisterDevice() async {
+    setState(() => _pushLoading = true);
+    try {
+      final api = PushApi();
+      final messenger = ScaffoldMessenger.of(context);
+      await api.unregisterToken(_deviceId);
+      if (mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('push_registered', false);
+        setState(() => _pushRegistered = false);
+        messenger.showSnackBar(
+          const SnackBar(content: Text('设备已注销推送服务'), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('注销失败: $e'), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _pushLoading = false);
+    }
+  }
+
   Widget _buildSection(String title, List<Widget> children) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,7 +730,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         child: const Icon(Icons.show_chart, color: Colors.white),
       ),
       title: Text(
-        'go-stock Mobile',
+        'goldstock Mobile',
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 18,
@@ -605,7 +786,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           const SizedBox(height: 6),
           Text(
             cfg['modelName']?.toString() ?? '',
-            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 4),
           Row(

@@ -7,13 +7,17 @@ import 'price_change.dart';
 class StockCard extends StatelessWidget {
   final StockRealTime stock;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final Widget? trailing;
+  final Widget? leading;
 
   const StockCard({
     super.key,
     required this.stock,
     this.onTap,
+    this.onLongPress,
     this.trailing,
+    this.leading,
   });
 
   @override
@@ -32,10 +36,15 @@ class StockCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: 8),
+              ],
               // Avatar with stock initial
               CircleAvatar(
                 radius: 22,

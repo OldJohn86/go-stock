@@ -140,7 +140,7 @@ class _GroupStockPageState extends ConsumerState<GroupStockPage> {
           const SizedBox(height: 8),
           Text(
             '在自选页长按股票可添加到分组',
-            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
           ),
         ],
       ),

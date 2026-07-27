@@ -19,6 +19,13 @@ func (Group) TableName() string {
 	return "stock_groups"
 }
 
+type GroupWithCount struct {
+	ID         uint   `json:"id"`
+	Name       string `json:"name"`
+	Sort       int    `json:"sort"`
+	StockCount int64  `json:"stockCount"`
+}
+
 type GroupStock struct {
 	gorm.Model
 	StockCode string `json:"stockCode" gorm:"index"`
@@ -107,6 +114,19 @@ func (receiver StockGroupApi) InitializeGroupSort() bool {
 	}
 	return true
 }
+
+// GetGroupListWithCount returns groups with stock count
+func (receiver StockGroupApi) GetGroupListWithCount() []GroupWithCount {
+	var results []GroupWithCount
+	receiver.dao.Model(&Group{}).
+		Select("stock_groups.id, stock_groups.name, stock_groups.sort, COUNT(group_stock_info.id) AS stock_count").
+		Joins("LEFT JOIN group_stock_info ON group_stock_info.group_id = stock_groups.id").
+		Group("stock_groups.id").
+		Order("stock_groups.sort ASC").
+		Scan(&results)
+	return results
+}
+
 func (receiver StockGroupApi) GetGroupStockByGroupId(groupId int) []GroupStock {
 	var stockGroup []GroupStock
 	receiver.dao.Preload("GroupInfo").Where("group_id = ?", groupId).Find(&stockGroup)

@@ -16,13 +16,21 @@ typedef NetworkStateCallback = void Function({
 });
 
 class ApiClient {
-  late final Dio _dio;
+  late Dio _dio;
   String _baseUrl = ApiConfig.apiV1;
 
   /// Maximum number of retries for connection/timeout errors.
   static const int _maxRetries = 2;
 
   String get baseUrl => _baseUrl;
+
+  /// Create an instance with a custom Dio (for testing).
+  @visibleForTesting
+  static ApiClient createWithDio(Dio dio) {
+    final client = ApiClient._();
+    client._dio = dio;
+    return client;
+  }
 
   ApiClient._() {
     _dio = Dio(BaseOptions(

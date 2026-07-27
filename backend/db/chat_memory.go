@@ -65,4 +65,5 @@ func AutoMigrate() {
 	Dao.AutoMigrate(&models.MarketStatistic{})
 	Dao.AutoMigrate(&models.StockTransactionCache{})
 	Dao.AutoMigrate(&models.StockTransactionCacheMeta{})
+	Dao.AutoMigrate(&models.DeviceToken{})
 }

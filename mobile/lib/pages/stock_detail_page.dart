@@ -5,6 +5,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../api/api_client.dart';
 import '../api/stock_api.dart';
+import '../api/trading_api.dart';
 import '../models/kline_data.dart';
 import '../models/minute_data.dart';
 import '../models/stock_info.dart';
@@ -13,6 +14,9 @@ import '../widgets/indicator_chart.dart';
 import '../widgets/kline_chart.dart';
 import '../widgets/minute_chart.dart';
 import '../widgets/price_change.dart';
+import 'alert_setting_page.dart';
+import 'kline_fullscreen_page.dart';
+import 'sector_ranking_page.dart';
 
 /// 股票详情页（含 K线 / 分时 / 详情）
 class StockDetailPage extends StatefulWidget {
@@ -453,7 +457,7 @@ class _StockDetailPageState extends State<StockDetailPage>
             const SizedBox(height: 8),
             Text(
               error,
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
               textAlign: TextAlign.center,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
@@ -496,6 +500,149 @@ class _StockDetailPageState extends State<StockDetailPage>
         await _fetchF10Data();
         break;
     }
+  }
+
+  /// 快速添加交易记录（显示简单对话框）
+  Future<void> _quickAddRecord(BuildContext context, String direction) async {
+    final priceCtrl = TextEditingController(text: _stock.currentPrice > 0 ? _stock.currentPrice.toStringAsFixed(2) : '');
+    final volumeCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('${direction == "买入" ? "买入" : "卖出"} ${_stock.stockName}'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: priceCtrl,
+                decoration: const InputDecoration(
+                  labelText: '价格',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                validator: (v) {
+                  final val = double.tryParse(v?.trim() ?? '');
+                  if (val == null || val <= 0) return '请输入有效价格';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: volumeCtrl,
+                decoration: const InputDecoration(
+                  labelText: '数量（股）',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  final val = int.tryParse(v?.trim() ?? '');
+                  if (val == null || val <= 0) return '请输入有效数量';
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+          FilledButton(onPressed: () {
+            if (formKey.currentState!.validate()) {
+              Navigator.pop(ctx, true);
+            }
+          }, child: const Text('保存')),
+        ],
+      ),
+    );
+
+    if (saved == true && mounted) {
+      final ok = await TradingApi().saveRecord(
+        stockCode: _stock.stockCode,
+        stockName: _stock.stockName,
+        direction: direction,
+        price: double.parse(priceCtrl.text.trim()),
+        volume: int.parse(volumeCtrl.text.trim()),
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ok ? '交易记录已保存' : '保存失败，请重试')),
+        );
+      }
+    }
+    priceCtrl.dispose();
+    volumeCtrl.dispose();
+  }
+
+  /// 显示 AI 股票分析
+  Future<void> _showAIStockAnalysis(BuildContext context) async {
+    final api = ApiClient();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        // Dialog content - will be updated
+        return _AIStockAnalysisDialog(
+          stockName: _stock.stockName,
+          stockCode: _stock.stockCode,
+          api: api,
+        );
+      },
+    );
+  }
+
+  /// 显示分组选择对话框
+  Future<void> _showGroupSelection(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final api = StockApi();
+    final groups = await api.getGroupList();
+    if (!mounted) return;
+
+    if (groups.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('暂无分组，请先在分组管理中创建')),
+      );
+      return;
+    }
+
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('选择分组'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: groups.length,
+            itemBuilder: (_, i) {
+              final g = groups[i];
+              return ListTile(
+                leading: const Icon(Icons.folder_outlined),
+                title: Text(g['name'] as String? ?? ''),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final ok = await api.addStockToGroup(
+                    groupId: g['id'] as int? ?? g['ID'] as int? ?? 0,
+                    stockCode: _stock.stockCode,
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(ok ? '已加入分组' : '加入失败')),
+                    );
+                  }
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+        ],
+      ),
+    );
   }
 
   Widget _buildKLineTab(BuildContext context) {
@@ -545,6 +692,26 @@ class _StockDetailPageState extends State<StockDetailPage>
               _indicatorChip('KDJ', IndicatorType.kdj),
               const SizedBox(width: 6),
               _indicatorChip('RSI', IndicatorType.rsi),
+              const SizedBox(width: 6),
+              IconButton(
+                icon: const Icon(Icons.fullscreen, size: 20),
+                tooltip: '全屏',
+                onPressed: _klineData.isEmpty
+                    ? null
+                    : () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => KLineFullscreenPage(
+                              data: _klineData,
+                              stockName: _stock.stockName,
+                              stockCode: _stock.stockCode,
+                            ),
+                          ),
+                        );
+                      },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              ),
             ],
           ),
         ),
@@ -623,7 +790,7 @@ class _StockDetailPageState extends State<StockDetailPage>
             const SizedBox(height: 8),
             Text(
               _financeError!,
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
             ),
             const SizedBox(height: 16),
             FilledButton.tonalIcon(
@@ -706,10 +873,196 @@ class _StockDetailPageState extends State<StockDetailPage>
                   _infoRow(theme, '最低', _stock.low.toStringAsFixed(2)),
                   _infoRow(theme, '日期', _stock.date),
                   _infoRow(theme, '时间', _stock.time),
+                  // 成交量/成交额
+                  if (_stock.volume > 0) _infoRow(theme, '成交量', formatVolume(_stock.volume)),
+                  if (_stock.amount > 0) _infoRow(theme, '成交额', formatAmount(_stock.amount)),
                 ],
               ),
             ),
           ),
+          // 技术指标摘要卡（新增）
+          if (_klineData.isNotEmpty)
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.15)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.analytics, size: 18, color: theme.colorScheme.primary),
+                        const SizedBox(width: 6),
+                        Text('技术指标', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                        const Spacer(),
+                        if (_klineType == '101')
+                          Text('日K', style: TextStyle(fontSize: 11, color: theme.disabledColor))
+                        else
+                          Text(_klineTypes.firstWhere((t) => t.type == _klineType, orElse: () => _klineTypes[0]).label,
+                              style: TextStyle(fontSize: 11, color: theme.disabledColor)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    ..._buildMALines(theme),
+                    const SizedBox(height: 8),
+                    _buildMACDState(theme),
+                  ],
+                ),
+              ),
+            ),
+          // 资金流向卡片
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.15)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text('资金流向', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+                      const Spacer(),
+                      TextButton.icon(
+                        icon: const Icon(Icons.grid_view, size: 14),
+                        label: const Text('板块行情', style: TextStyle(fontSize: 12)),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const SectorRankingPage()),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // 成交量可视化
+                  if (_stock.volume > 0) ...[
+                    _fundFlowRow(theme, '成交量', formatVolume(_stock.volume),
+                        _stock.volume.toDouble(), 1.0),
+                    const SizedBox(height: 8),
+                  ],
+                  if (_stock.amount > 0)
+                    _fundFlowRow(theme, '成交额', formatAmount(_stock.amount),
+                        _stock.amount, 1.0),
+                  const SizedBox(height: 8),
+                  // 买卖盘比例（使用买卖五档数据）
+                  if (_stock.buyLevels.isNotEmpty || _stock.sellLevels.isNotEmpty) ...[
+                    const Divider(height: 16),
+                    _buildBuySellBar(theme),
+                  ],
+                  // 换手率估算（基于基础信息）
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Text('说明：成交量和成交额反映资金活跃度',
+                          style: TextStyle(fontSize: 11, color: theme.disabledColor)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // 快捷操作
+          Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.15)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  // Row 1: 记录交易
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _quickAddRecord(context, '买入'),
+                          icon: const Icon(Icons.shopping_cart, size: 16),
+                          label: const Text('记录买入'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _quickAddRecord(context, '卖出'),
+                          icon: const Icon(Icons.monetization_on, size: 16),
+                          label: const Text('记录卖出'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.green,
+                            side: const BorderSide(color: Colors.green),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  // Row 2: AI 分析 + 加入分组
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showAIStockAnalysis(context),
+                          icon: const Icon(Icons.psychology, size: 16),
+                          label: const Text('AI 分析'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Theme.of(context).colorScheme.primary,
+                            side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _showGroupSelection(context),
+                          icon: const Icon(Icons.folder, size: 16),
+                          label: const Text('加入分组'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Row 3: 预警设置
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AlertSettingPage()),
+                          ),
+                          icon: const Icon(Icons.notifications_active, size: 16),
+                          label: const Text('预警设置'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.orange,
+                            side: const BorderSide(color: Colors.orange),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(child: SizedBox()),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 买卖五档
+          if (_stock.buyLevels.isNotEmpty || _stock.sellLevels.isNotEmpty)
+            _buildOrderBookCard(theme),
           const SizedBox(height: 16),
           if (_financeLoading)
             const Center(
@@ -766,6 +1119,277 @@ class _StockDetailPageState extends State<StockDetailPage>
     );
   }
 
+  /// 构建均线摘要行
+  List<Widget> _buildMALines(ThemeData theme) {
+    if (_klineData.isEmpty) return [];
+    final currentPrice = _klineData.last.close;
+    final maMap = _klineData.last.ma ?? {};
+
+    if (maMap.isEmpty) return [];
+
+    return maMap.entries.map((entry) {
+      final maValue = entry.value;
+      final isAbove = currentPrice >= maValue;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(3),
+              ),
+              child: Text(
+                entry.key,
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              maValue.toStringAsFixed(2),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+            const Spacer(),
+            Icon(
+              isAbove ? Icons.arrow_upward : Icons.arrow_downward,
+              size: 14,
+              color: isAbove ? Colors.red : Colors.green,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '${isAbove ? '+' : '-'}${((currentPrice - maValue) / maValue * 100).abs().toStringAsFixed(2)}%',
+              style: TextStyle(fontSize: 11, color: isAbove ? Colors.red : Colors.green),
+            ),
+          ],
+        ),
+      );
+    }).toList();
+  }
+
+  /// 构建 MACD 状态指示
+  Widget _buildMACDState(ThemeData theme) {
+    if (_klineData.length < 2) return const SizedBox.shrink();
+    // 简单判断：EMA12 > EMA26 ≈ 价格短期均线在长期均线之上（简化为当前价与过去均值关系）
+    final maShort = _computeMA(5);
+    final maLong = _computeMA(20);
+    final isGolden = maShort > maLong && maShort > 0 && maLong > 0;
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: (isGolden ? Colors.red : Colors.green).withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: (isGolden ? Colors.red : Colors.green).withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isGolden ? Icons.trending_up : Icons.trending_down,
+            size: 16,
+            color: isGolden ? Colors.red : Colors.green,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              isGolden
+                  ? '短期均线(${maShort.toStringAsFixed(2)}) > 长期均线(${maLong.toStringAsFixed(2)})，多头趋势'
+                  : '长期均线(${maLong.toStringAsFixed(2)}) > 短期均线(${maShort.toStringAsFixed(2)})，空头趋势',
+              style: TextStyle(fontSize: 11, color: isGolden ? Colors.red : Colors.green),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 计算简单移动平均
+  double _computeMA(int period) {
+    if (_klineData.length < period) return 0;
+    double sum = 0;
+    for (int i = _klineData.length - period; i < _klineData.length; i++) {
+      sum += _klineData[i].close;
+    }
+    return sum / period;
+  }
+
+  Widget _buildOrderBookCard(ThemeData theme) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.15)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('买卖五档', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            // 卖五~卖一
+            ...List.generate(_stock.sellLevels.length, (i) {
+              final level = _stock.sellLevels[_stock.sellLevels.length - 1 - i];
+              return _orderBookRow(
+                theme,
+                '卖${_stock.sellLevels.length - i}',
+                level.price,
+                level.volume,
+                isBuy: false,
+              );
+            }),
+            // 当前价
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text( _stock.currentPrice > 0
+                      ? _stock.currentPrice.toStringAsFixed(2)
+                      : '-',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: _stock.isUp ? Colors.red : Colors.green,
+                    ),
+                  ),
+                  Text(
+                    '${_stock.currentPrice > 0 ? (_stock.isUp ? '+' : '') : ''}${_stock.changePercent.toStringAsFixed(2)}%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _stock.isUp ? Colors.red : Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 买一~买五
+            ...List.generate(_stock.buyLevels.length, (i) {
+              final level = _stock.buyLevels[i];
+              return _orderBookRow(
+                theme,
+                '买${i + 1}',
+                level.price,
+                level.volume,
+                isBuy: true,
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _orderBookRow(ThemeData theme, String label, double price, double volume, {required bool isBuy}) {
+    final color = isBuy ? Colors.red : Colors.green;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 36,
+            child: Text(label, style: TextStyle(fontSize: 13, color: color.withValues(alpha: 0.7))),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(price.toStringAsFixed(2), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          ),
+          Text(
+            '${volume.toStringAsFixed(0)}手',
+            style: TextStyle(fontSize: 13, color: theme.disabledColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _fundFlowRow(ThemeData theme, String label, String value, double amount, double maxAmount) {
+    final ratio = maxAmount > 0 ? (amount / maxAmount).clamp(0.0, 1.0) : 0.0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: LinearProgressIndicator(
+            value: ratio,
+            minHeight: 6,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary.withValues(alpha: 0.7)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBuySellBar(ThemeData theme) {
+    final totalBuyVol = _stock.buyLevels.fold<double>(0, (sum, l) => sum + l.volume);
+    final totalSellVol = _stock.sellLevels.fold<double>(0, (sum, l) => sum + l.volume);
+    final total = totalBuyVol + totalSellVol;
+    if (total <= 0) return const SizedBox();
+
+    final buyRatio = totalBuyVol / total;
+    final sellRatio = totalSellVol / total;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('买卖盘压力', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13)),
+            const SizedBox(width: 8),
+            Text(
+              '买 ${(buyRatio * 100).toStringAsFixed(0)}%',
+              style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '卖 ${(sellRatio * 100).toStringAsFixed(0)}%',
+              style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: Row(
+            children: [
+              Expanded(
+                flex: (buyRatio * 100).round(),
+                child: Container(height: 8, color: Colors.red.withValues(alpha: 0.6)),
+              ),
+              Expanded(
+                flex: (sellRatio * 100).round(),
+                child: Container(height: 8, color: Colors.green.withValues(alpha: 0.6)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('买方 ${_formatVolume(totalBuyVol)}手', style: TextStyle(fontSize: 11, color: Colors.red.withValues(alpha: 0.7))),
+            Text('卖方 ${_formatVolume(totalSellVol)}手', style: TextStyle(fontSize: 11, color: Colors.green.withValues(alpha: 0.7))),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _formatVolume(double vol) {
+    if (vol >= 10000) {
+      return '${(vol / 10000).toStringAsFixed(1)}万';
+    }
+    return vol.toStringAsFixed(0);
+  }
+
   Widget _infoRow(ThemeData theme, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -787,4 +1411,99 @@ class _KLineTypeOption {
   final String label;
   final String type;
   const _KLineTypeOption(this.label, this.type);
+}
+
+/// AI 股票分析对话框 — 异步调用并显示结果
+class _AIStockAnalysisDialog extends StatefulWidget {
+  final String stockName;
+  final String stockCode;
+  final ApiClient api;
+
+  const _AIStockAnalysisDialog({
+    required this.stockName,
+    required this.stockCode,
+    required this.api,
+  });
+
+  @override
+  State<_AIStockAnalysisDialog> createState() => _AIStockAnalysisDialogState();
+}
+
+class _AIStockAnalysisDialogState extends State<_AIStockAnalysisDialog> {
+  String _result = '';
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAnalysis();
+  }
+
+  Future<void> _fetchAnalysis() async {
+    final prompt =
+        '请分析 ${widget.stockName}(${widget.stockCode}) 的走势。从技术面（K线形态、均线、MACD、KDJ等指标）和基本面（财务数据、行业地位等）两个维度进行分析，给出操作建议。';
+    try {
+      final resp = await widget.api.post('/agent/chat', data: {
+        'question': prompt,
+        'aiConfigId': 1,
+        'thinkingMode': 'false',
+        'agentMode': 'react',
+        'memoryMode': 'false',
+      });
+      if (mounted) {
+        setState(() {
+          if (resp.isSuccess && resp.data != null) {
+            final data = resp.data as Map<String, dynamic>?;
+            _result = data?['content'] as String? ?? '暂无分析结果';
+          } else {
+            _error = resp.message;
+          }
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('${widget.stockName} AI 分析'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: _loading
+            ? const Padding(
+                padding: EdgeInsets.all(30),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : _error != null
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, size: 48),
+                  const SizedBox(height: 12),
+                  Text('分析失败', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  Text(_error!, style: const TextStyle(fontSize: 12)),
+                ],
+              )
+            : SingleChildScrollView(
+                child: SelectableText(_result),
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('关闭'),
+        ),
+      ],
+    );
+  }
 }

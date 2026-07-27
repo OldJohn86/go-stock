@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../api/trading_api.dart';
+import '../api/stock_api.dart';
 import '../models/trading_record.dart';
+import '../models/stock_info.dart';
+import '../widgets/skeleton.dart';
+import '../widgets/trading_charts.dart';
 import 'stock_detail_page.dart';
 
 /// 交易日志页
@@ -26,6 +31,7 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
   String? _directionFilter;
   String _keyword = '';
   final _searchController = TextEditingController();
+  bool _showCharts = false;
 
   @override
   void initState() {
@@ -112,13 +118,97 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
     _loadData();
   }
 
+  Future<void> _deleteRecord(TradingRecordItem item) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('确认删除'),
+        content: Text('确定删除 ${item.stockName}(${item.stockCode}) 的交易记录吗？'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      final ok = await _api.deleteRecord(item.id);
+      if (ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('已删除')),
+        );
+        _loadData();
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('删除失败')),
+        );
+      }
+    }
+  }
+
+  void _showAddRecordSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => _AddRecordSheet(
+        onSaved: () {
+          _loadData();
+        },
+      ),
+    );
+  }
+
+  Future<void> _exportRecords() async {
+    final loading = ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Row(
+        children: [
+          SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+          SizedBox(width: 12),
+          Text('正在导出...'),
+        ],
+      )),
+    );
+
+    final filePath = await _api.exportRecords(
+      direction: _directionFilter,
+      keyword: _keyword.isEmpty ? null : _keyword,
+    );
+
+    loading.close();
+
+    if (!mounted) return;
+
+    if (filePath != null) {
+      await Share.shareXFiles(
+        [XFile(filePath)],
+        subject: '交易记录导出',
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('导出失败，请稍后重试')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      floatingActionButton: FloatingActionButton(
+        mini: true,
+        onPressed: _showAddRecordSheet,
+        child: const Icon(Icons.add),
+      ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const TradingRecordSkeleton()
           : RefreshIndicator(
               onRefresh: _loadData,
               child: CustomScrollView(
@@ -128,6 +218,39 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
                   if (_stats != null) SliverToBoxAdapter(
                     child: _buildStatsCard(theme),
                   ),
+                  // 图表切换
+                  if (_stats != null && _records.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        child: Row(
+                          children: [
+                            TextButton.icon(
+                              icon: Icon(
+                                _showCharts ? Icons.bar_chart : Icons.show_chart,
+                                size: 16,
+                              ),
+                              label: Text(_showCharts ? '隐藏图表' : '交易图表'),
+                              onPressed: () => setState(() => _showCharts = !_showCharts),
+                            ),
+                            const Spacer(),
+                            TextButton.icon(
+                              icon: const Icon(Icons.file_download, size: 16),
+                              label: const Text('导出CSV'),
+                              onPressed: _exportRecords,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  // 图表内容
+                  if (_showCharts && _stats != null)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: TradingStatsCharts(stats: _stats!, records: _records),
+                      ),
+                    ),
                   // 筛选栏
                   SliverToBoxAdapter(
                     child: _buildFilterBar(theme),
@@ -144,6 +267,12 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
                               Icon(Icons.receipt_long, size: 48, color: theme.disabledColor),
                               const SizedBox(height: 12),
                               Text('暂无交易记录', style: TextStyle(color: theme.disabledColor)),
+                              const SizedBox(height: 8),
+                              FilledButton.tonalIcon(
+                                onPressed: _showAddRecordSheet,
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('添加第一条记录'),
+                              ),
                             ],
                           ),
                         ),
@@ -386,6 +515,7 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
             ),
           );
         },
+        onLongPress: () => _deleteRecord(item),
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
@@ -479,5 +609,366 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
 
   String _formatPercent(double value) {
     return '${value >= 0 ? '+' : ''}${value.toStringAsFixed(2)}%';
+  }
+}
+
+// ============================================================
+// 添加交易记录底部表单（unchanged from previous version）
+// ============================================================
+class _AddRecordSheet extends StatefulWidget {
+  final VoidCallback onSaved;
+  const _AddRecordSheet({required this.onSaved});
+
+  @override
+  State<_AddRecordSheet> createState() => _AddRecordSheetState();
+}
+
+class _AddRecordSheetState extends State<_AddRecordSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _stockCodeCtrl = TextEditingController();
+  final _stockNameCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  final _volumeCtrl = TextEditingController();
+  final _feeCtrl = TextEditingController();
+  final _stopLossCtrl = TextEditingController();
+  final _takeProfitCtrl = TextEditingController();
+  final _reasonCtrl = TextEditingController();
+
+  String _direction = '买入';
+  bool _saving = false;
+
+  // 股票搜索
+  List<StockRealTime> _searchResults = [];
+  bool _searching = false;
+  bool _searchFocused = false;
+
+  @override
+  void dispose() {
+    _stockCodeCtrl.dispose();
+    _stockNameCtrl.dispose();
+    _priceCtrl.dispose();
+    _volumeCtrl.dispose();
+    _feeCtrl.dispose();
+    _stopLossCtrl.dispose();
+    _takeProfitCtrl.dispose();
+    _reasonCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _searchStock(String keyword) async {
+    if (keyword.trim().isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _searching = false;
+      });
+      return;
+    }
+    setState(() => _searching = true);
+    try {
+      final results = await StockApi().getStockList(name: keyword, pageSize: 10);
+      if (mounted) {
+        setState(() {
+          _searchResults = results;
+          _searching = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _searching = false);
+    }
+  }
+
+  void _selectStock(StockRealTime stock) {
+    _stockCodeCtrl.text = stock.stockCode;
+    _stockNameCtrl.text = stock.stockName;
+    setState(() {
+      _searchResults = [];
+      _searchFocused = false;
+    });
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _saving = true);
+    final ok = await TradingApi().saveRecord(
+      stockCode: _stockCodeCtrl.text.trim(),
+      stockName: _stockNameCtrl.text.trim(),
+      direction: _direction,
+      price: double.parse(_priceCtrl.text.trim()),
+      volume: int.parse(_volumeCtrl.text.trim()),
+      fee: double.tryParse(_feeCtrl.text.trim()) ?? 0,
+      stopLossPrice: double.tryParse(_stopLossCtrl.text.trim()) ?? 0,
+      takeProfitPrice: double.tryParse(_takeProfitCtrl.text.trim()) ?? 0,
+      reason: _reasonCtrl.text.trim().isEmpty ? null : _reasonCtrl.text.trim(),
+    );
+    setState(() => _saving = false);
+
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pop(context);
+      widget.onSaved();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('交易记录已保存')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('保存失败，请检查参数')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.92,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) {
+          return Form(
+            key: _formKey,
+            child: ListView(
+              controller: scrollController,
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              children: [
+                // 标题 + 关闭
+                Row(
+                  children: [
+                    Text('添加交易记录', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // 股票搜索
+                Text('股票', style: theme.textTheme.labelLarge),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _stockCodeCtrl,
+                  decoration: InputDecoration(
+                    hintText: '输入股票代码搜索',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    isDense: true,
+                    suffixIcon: _searching
+                        ? const Padding(
+                            padding: EdgeInsets.all(10),
+                            child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                          )
+                        : null,
+                  ),
+                  onChanged: (v) {
+                    _searchStock(v);
+                    setState(() => _searchFocused = true);
+                  },
+                  onTap: () => setState(() => _searchResults.isNotEmpty ? _searchFocused = true : null),
+                ),
+                if (_searchFocused && _searchResults.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    constraints: const BoxConstraints(maxHeight: 160),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: _searchResults.length,
+                      separatorBuilder: (_, _) => const Divider(height: 1),
+                      itemBuilder: (_, i) {
+                        final s = _searchResults[i];
+                        return ListTile(
+                          dense: true,
+                          title: Text(s.stockName, style: const TextStyle(fontSize: 14)),
+                          subtitle: Text(s.stockCode, style: TextStyle(fontSize: 12, color: theme.disabledColor)),
+                          trailing: Text(
+                            s.currentPrice > 0 ? s.currentPrice.toStringAsFixed(2) : '-',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: s.isUp ? Colors.red : Colors.green),
+                          ),
+                          onTap: () => _selectStock(s),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ] else ...[
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _stockNameCtrl,
+                    decoration: InputDecoration(
+                      hintText: '股票名称',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      isDense: true,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+
+                // 交易方向
+                Text('方向', style: theme.textTheme.labelLarge),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [Icon(Icons.shopping_cart, size: 16), SizedBox(width: 4), Text('买入')],
+                        ),
+                        selected: _direction == '买入',
+                        selectedColor: Colors.red.withValues(alpha: 0.15),
+                        onSelected: (_) => setState(() => _direction = '买入'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [Icon(Icons.monetization_on, size: 16), SizedBox(width: 4), Text('卖出')],
+                        ),
+                        selected: _direction == '卖出',
+                        selectedColor: Colors.green.withValues(alpha: 0.15),
+                        onSelected: (_) => setState(() => _direction = '卖出'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // 价格和数量
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _priceCtrl,
+                        decoration: InputDecoration(
+                          labelText: '价格',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          isDense: true,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return '请输入价格';
+                          final val = double.tryParse(v.trim());
+                          if (val == null || val <= 0) return '请输入有效价格';
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _volumeCtrl,
+                        decoration: InputDecoration(
+                          labelText: '数量（股）',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          isDense: true,
+                        ),
+                        keyboardType: TextInputType.number,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) return '请输入数量';
+                          final val = int.tryParse(v.trim());
+                          if (val == null || val <= 0) return '请输入有效数量';
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // 可选字段
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _feeCtrl,
+                        decoration: InputDecoration(
+                          labelText: '手续费（可选）',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          isDense: true,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _stopLossCtrl,
+                        decoration: InputDecoration(
+                          labelText: '止损价（可选）',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          isDense: true,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _takeProfitCtrl,
+                        decoration: InputDecoration(
+                          labelText: '止盈价（可选）',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          isDense: true,
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // 买入/卖出原因
+                Text('原因（可选）', style: theme.textTheme.labelLarge),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: _reasonCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: '记录买入或卖出原因...',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 保存按钮
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton(
+                    onPressed: _saving ? null : _save,
+                    child: _saving
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('保存记录', style: TextStyle(fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }
