@@ -8,9 +8,13 @@ import '../models/stock_info.dart';
 import '../providers/group_provider.dart';
 import '../providers/stock_provider.dart';
 import '../widgets/index_bar.dart';
-import '../widgets/stock_card.dart';
 import 'group_manage_page.dart';
-import 'group_stock_page.dart';
+import 'hot_market_page.dart';
+import 'long_tiger_page.dart';
+import 'market_radar_page.dart';
+import 'sector_ranking_page.dart';
+import 'tdx_deep_data_page.dart';
+import '../widgets/stock_card.dart';
 import 'stock_detail_page.dart';
 
 /// 行情页 — 自选 / 全市场
@@ -23,9 +27,8 @@ class StockListPage extends ConsumerStatefulWidget {
 
 class _StockListPageState extends ConsumerState<StockListPage>
     with WidgetsBindingObserver {
-  int _tabIndex = 0; // 0=自选, 1=分组, 2=市场
-
-  // 全市场数据
+  int _tabIndex = 0;
+  // 全市场数据（MarketPage 独立管理，此处保留兼容旧代码）
   List<StockRealTime> _marketStocks = [];
   bool _marketLoading = false;
   String? _marketError;
@@ -100,11 +103,7 @@ class _StockListPageState extends ConsumerState<StockListPage>
     if (!_isAppVisible || _isScrolling || !mounted) return;
     // 刷新大盘指数
     _indexBarKey.currentState?.refresh();
-    if (_tabIndex == 0 || _tabIndex == 1) {
-      ref.read(followListProvider.notifier).refresh();
-    } else {
-      await _fetchMarketStocks(showLoading: false);
-    }
+    ref.read(followListProvider.notifier).refresh();
   }
 
   List<StockRealTime> get _displayedStocks {
@@ -256,19 +255,25 @@ class _StockListPageState extends ConsumerState<StockListPage>
         children: [
           // 大盘指数栏
           IndexBar(key: _indexBarKey),
-          // Segmented buttons header (自选 / 分组 / 市场)
+          // 子标签栏（自选/分组/市场 + 行情工具入口）
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _segmentedButton('自选', Icons.star, 0),
-                const SizedBox(width: 8),
-                _segmentedButton('分组', Icons.folder, 1),
-                const SizedBox(width: 8),
-                _segmentedButton('市场', Icons.explore, 2),
-                if (_isAutoRefreshing) _buildAutoRefreshIndicator(),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  _segmentedButton('自选', Icons.star, 0),
+                  const SizedBox(width: 8),
+                  _subTabDivider(),
+                  _subTabButton('板块', Icons.grid_view, () => _push(const SectorRankingPage())),
+                  _subTabButton('雷达', Icons.radar, () => _push(const MarketRadarPage())),
+                  _subTabButton('热门', Icons.local_fire_department, () => _push(const HotMarketPage())),
+                  _subTabButton('龙虎榜', Icons.trending_up, () => _push(const LongTigerPage())),
+                  _subTabButton('TDX', Icons.data_exploration, () => _push(const TdxDeepDataPage())),
+                  if (_isAutoRefreshing) ...[const SizedBox(width: 8), _buildAutoRefreshIndicator()],
+                ],
+              ),
             ),
           ),
           // Body content
@@ -284,14 +289,7 @@ class _StockListPageState extends ConsumerState<StockListPage>
                 }
                 return false;
               },
-              child: IndexedStack(
-                index: _tabIndex,
-                children: [
-                  _buildFollowTab(followAsync),
-                  _buildGroupTab(),
-                  _buildMarketTab(followedCodes),
-                ],
-              ),
+              child: _buildFollowTab(followAsync, followedCodes),
             ),
           ),
         ],
@@ -325,6 +323,43 @@ class _StockListPageState extends ConsumerState<StockListPage>
         ],
       ),
     );
+  }
+
+  Widget _subTabDivider() {
+    return Container(
+      width: 1,
+      height: 20,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      color: Colors.grey.withValues(alpha: 0.3),
+    );
+  }
+
+  Widget _subTabButton(String label, IconData icon, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: Colors.grey[600]),
+                const SizedBox(width: 3),
+                Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _push(Widget page) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 
   Widget _segmentedButton(
@@ -379,164 +414,9 @@ class _StockListPageState extends ConsumerState<StockListPage>
     );
   }
 
-  Widget _buildGroupTab() {
-    final groups = ref.watch(groupListProvider);
+  Widget _buildFollowTab(AsyncValue<List<StockRealTime>> followAsync, Set<String> followedCodes) {
     return Column(
       children: [
-        // 分组管理入口
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '我的分组',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              TextButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (_) => const GroupManagePage()),
-                  );
-                },
-                icon: const Icon(Icons.settings, size: 18),
-                label: const Text('管理'),
-              ),
-            ],
-          ),
-        ),
-        // 分组网格
-        Expanded(
-          child: groups.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.folder_outlined, size: 64,
-                          color: Colors.grey[400]),
-                      const SizedBox(height: 16),
-                      Text(
-                        '还没有创建分组',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                                builder: (_) => const GroupManagePage()),
-                          );
-                        },
-                        icon: const Icon(Icons.add),
-                        label: const Text('创建分组'),
-                      ),
-                    ],
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: () => ref
-                      .read(groupListProvider.notifier)
-                      .load(),
-                  child: GridView.builder(
-                    padding:
-                        const EdgeInsets.fromLTRB(12, 8, 12, 24),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.8,
-                    ),
-                    itemCount: groups.length,
-                    itemBuilder: (_, i) {
-                      final group = groups[i];
-                      return Card(
-                        elevation: 2,
-                        shadowColor:
-                            Theme.of(context).colorScheme.primary.withValues(
-                                  alpha: 0.3,
-                                ),
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => GroupStockPage(
-                                  groupId: group.id,
-                                  groupName: group.name,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.center,
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Icon(Icons.folder,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary),
-                                const SizedBox(height: 8),
-                                Text(
-                                  group.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFollowTab(AsyncValue<List<StockRealTime>> followAsync) {
-    return Column(
-      children: [
-        // 编辑模式工具栏
-        if (_tabIndex == 0)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '自选股',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _isEditing = !_isEditing;
-                      if (!_isEditing) _selectedCodes.clear();
-                    });
-                  },
-                  icon: Icon(
-                    _isEditing ? Icons.check : Icons.edit,
-                    size: 16,
-                  ),
-                  label: Text(_isEditing ? '完成' : '编辑', style: const TextStyle(fontSize: 13)),
-                ),
-              ],
-            ),
-          ),
         // 列表
         Expanded(
           child: RefreshIndicator(
@@ -551,7 +431,7 @@ class _StockListPageState extends ConsumerState<StockListPage>
                     title: '还没有关注任何股票',
                     subtitle: '切换到"市场"页浏览并关注喜欢的股票',
                     actionLabel: '去浏览市场',
-                    action: () => setState(() => _tabIndex = 2),
+                    action: () => setState(() => _tabIndex = 1),
                   );
                 }
                 return Column(
@@ -578,7 +458,6 @@ class _StockListPageState extends ConsumerState<StockListPage>
     );
   }
 
-  /// 编辑模式底部操作栏
   Widget _buildEditActionBar(
       List<StockRealTime> stocks, WidgetRef ref) {
     return Container(

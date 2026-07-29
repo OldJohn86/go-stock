@@ -144,10 +144,10 @@ func HandleGetPositions(c *gin.Context) {
 	sdApi := data.NewStockDataApi()
 	portfolioApi := data.NewPortfolioApi(cfg.Settings)
 
-	followList := sdApi.GetFollowList(0)
+	allPositions := portfolioApi.GetPositions()
 	var codes []string
-	for _, st := range *followList {
-		codes = append(codes, st.StockCode)
+	for _, pos := range allPositions {
+		codes = append(codes, pos.StockCode)
 	}
 
 	priceMap := make(map[string]data.PriceInfo)
@@ -165,8 +165,6 @@ func HandleGetPositions(c *gin.Context) {
 		}
 	}
 
-	allPositions := portfolioApi.GetPositions()
-	_ = allPositions
 	positions := portfolioApi.GetPositionsWithPnL(priceMap)
 	cash := portfolioApi.CashAmount()
 

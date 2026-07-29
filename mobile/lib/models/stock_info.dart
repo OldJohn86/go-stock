@@ -19,6 +19,9 @@ class StockRealTime {
   final double volume; // 成交的股票数（手）
   final double amount; // 成交金额（元）
 
+  // 涨跌幅（优先用后端直接返回的涨跌幅，避免 DB 字段计算为 0%）
+  final double changePercent;
+
   // 买卖五档
   final List<OrderBookLevel> buyLevels;
   final List<OrderBookLevel> sellLevels;
@@ -28,6 +31,7 @@ class StockRealTime {
     required this.stockName,
     required this.currentPrice,
     required this.preClose,
+    this.changePercent = 0,
     required this.open,
     required this.high,
     required this.low,
@@ -40,49 +44,64 @@ class StockRealTime {
   });
 
   factory StockRealTime.fromJson(Map<String, dynamic> json) {
-    // 解析买卖五档
+    // 安全解析数值（后端有时返回字符串如"3805.46"，有时返回数字）
+    double v(dynamic val) {
+      if (val is num) return val.toDouble();
+      if (val is String) return double.tryParse(val) ?? 0.0;
+      return 0.0;
+    }
+
+    // 解析买卖五档（后端使用中文数字键名如"买一报价"，详见 stock_data_api.go）
+    const chineseNums = ['', '一', '二', '三', '四', '五'];
     final buyLevels = <OrderBookLevel>[];
     final sellLevels = <OrderBookLevel>[];
     for (int i = 1; i <= 5; i++) {
-      final bp = (json['买$i报价'] as num?)?.toDouble();
-      final bv = (json['买$i申报'] as num?)?.toDouble();
-      if (bp != null && bp > 0) {
-        buyLevels.add(OrderBookLevel(price: bp, volume: bv ?? 0));
+      final key = chineseNums[i];
+      final bp = v(json['买$key报价']);
+      final bv = v(json['买$key申报']);
+      if (bp > 0) {
+        buyLevels.add(OrderBookLevel(price: bp, volume: bv));
       }
-      final ap = (json['卖$i报价'] as num?)?.toDouble();
-      final av = (json['卖$i申报'] as num?)?.toDouble();
-      if (ap != null && ap > 0) {
-        sellLevels.add(OrderBookLevel(price: ap, volume: av ?? 0));
+      final ap = v(json['卖$key报价']);
+      final av = v(json['卖$key申报']);
+      if (ap > 0) {
+        sellLevels.add(OrderBookLevel(price: ap, volume: av));
       }
     }
 
     // 兼容 FollowedStock 没有 昨日收盘价 的情况，用 当前价格 - 价格变动 推算
-    final parsedCurrentPrice = (json['当前价格'] as num?)?.toDouble() ?? 0.0;
-    final rawPreClose = (json['昨日收盘价'] as num?)?.toDouble() ?? 0.0;
+    final parsedCurrentPrice = v(json['当前价格']);
+    final rawPreClose = v(json['昨日收盘价']);
     final parsedPreClose = rawPreClose > 0
         ? rawPreClose
-        : (parsedCurrentPrice - ((json['价格变动'] as num?)?.toDouble() ?? 0.0));
+        : (parsedCurrentPrice - v(json['价格变动']));
+
+    // 优先用后端直返涨跌幅，不存在时用价格推算
+    final parsedChangePercent = json.containsKey('涨跌幅')
+        ? v(json['涨跌幅'])
+        : parsedPreClose > 0
+            ? ((parsedCurrentPrice - parsedPreClose) / parsedPreClose) * 100
+            : 0.0;
 
     return StockRealTime(
       stockCode: json['股票代码'] as String? ?? '',
       stockName: json['股票名称'] as String? ?? '',
       currentPrice: parsedCurrentPrice,
       preClose: parsedPreClose,
-      open: (json['今日开盘价'] as num?)?.toDouble() ?? 0.0,
-      high: (json['今日最高价'] as num?)?.toDouble() ?? 0.0,
-      low: (json['今日最低价'] as num?)?.toDouble() ?? 0.0,
+      changePercent: parsedChangePercent,
+      open: v(json['今日开盘价']),
+      high: v(json['今日最高价']),
+      low: v(json['今日最低价']),
       date: json['日期'] as String? ?? '',
       time: json['时间'] as String? ?? '',
-      volume: (json['成交的股票数'] as num?)?.toDouble() ?? 0,
-      amount: (json['成交金额'] as num?)?.toDouble() ?? 0,
+      volume: v(json['成交的股票数']),
+      amount: v(json['成交金额']),
       buyLevels: buyLevels,
       sellLevels: sellLevels,
     );
   }
 
   double get change => preClose > 0 ? currentPrice - preClose : 0;
-  double get changePercent =>
-      preClose > 0 ? (change / preClose) * 100 : 0;
 
   bool get isUp => change >= 0;
 

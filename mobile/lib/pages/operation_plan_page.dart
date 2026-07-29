@@ -350,6 +350,10 @@ class _OperationPlanPageState extends ConsumerState<OperationPlanPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("每日操作计划"),
+        centerTitle: true,
+      ),
       backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [

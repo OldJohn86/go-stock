@@ -142,6 +142,7 @@ func (f *FcmApi) PushToDevice(token, title, body string, data map[string]string)
 }
 
 // PushToAllDevices 向所有已注册的设备推送通知
+// 最多同时推送 maxConcurrentPush 个设备，避免资源耗尽
 func (f *FcmApi) PushToAllDevices(title, body string, data map[string]string) {
 	if !f.IsEnabled() {
 		logger.SugaredLogger.Warn("FCM 推送未启用，跳过推送")
@@ -154,16 +155,25 @@ func (f *FcmApi) PushToAllDevices(title, body string, data map[string]string) {
 		return
 	}
 
+	const maxConcurrentPush = 20
+	sem := make(chan struct{}, maxConcurrentPush)
+	var wg sync.WaitGroup
+
 	for _, t := range tokens {
 		if strings.TrimSpace(t.Token) == "" {
 			continue
 		}
+		wg.Add(1)
+		sem <- struct{}{} // 阻塞直到有空闲槽位
 		go func(token string) {
+			defer wg.Done()
+			defer func() { <-sem }()
 			if err := f.PushToDevice(token, title, body, data); err != nil {
 				logger.SugaredLogger.Errorf("FCM 推送失败(token=%s): %v", token[:min(20, len(token))], err)
 			}
 		}(strings.TrimSpace(t.Token))
 	}
+	wg.Wait()
 }
 
 // PushToDevices 向指定的设备 Token 列表推送通知
@@ -171,16 +181,26 @@ func (f *FcmApi) PushToDevices(tokens []string, title, body string, data map[str
 	if !f.IsEnabled() {
 		return
 	}
+
+	const maxConcurrentPush = 20
+	sem := make(chan struct{}, maxConcurrentPush)
+	var wg sync.WaitGroup
+
 	for _, token := range tokens {
 		if strings.TrimSpace(token) == "" {
 			continue
 		}
+		wg.Add(1)
+		sem <- struct{}{}
 		go func(t string) {
+			defer wg.Done()
+			defer func() { <-sem }()
 			if err := f.PushToDevice(t, title, body, data); err != nil {
 				logger.SugaredLogger.Errorf("FCM 推送失败: %v", err)
 			}
 		}(strings.TrimSpace(token))
 	}
+	wg.Wait()
 }
 
 func min(a, b int) int {

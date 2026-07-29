@@ -11,6 +11,11 @@ import '../config/api_config.dart';
 import '../providers/api_url_provider.dart';
 import '../providers/theme_provider.dart';
 import '../utils/notification_helper.dart';
+import 'cron_task_page.dart';
+import 'fund_list_page.dart';
+import 'mcp_server_page.dart';
+import 'stock_notice_page.dart';
+import 'trading_calendar_page.dart';
 
 /// 设置页
 class SettingsPage extends ConsumerStatefulWidget {
@@ -382,6 +387,48 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               )
             else
               ..._aiConfigs.map((cfg) => _buildAiConfigCard(cfg)),
+
+          const SizedBox(height: 16),
+
+          // 其他功能
+          _buildSection('其他功能', [
+            ListTile(
+              leading: const Icon(Icons.account_balance),
+              title: const Text("基金追踪"),
+              subtitle: const Text("基金行情与短线机会"),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FundListPage())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.article_outlined),
+              title: const Text("股票公告"),
+              subtitle: const Text("业绩预告、重大公告"),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StockNoticePage())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_month),
+              title: const Text("交易日历"),
+              subtitle: const Text("A\u80a1\u5e02\u573a\u4ea4\u6613\u65e5/\u975e\u4ea4\u6613\u65e5"),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TradingCalendarPage())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.schedule),
+              title: const Text("定时任务"),
+              subtitle: const Text("自动任务调度与执行"),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CronTaskPage())),
+            ),
+            ListTile(
+              leading: const Icon(Icons.dns_outlined),
+              title: const Text("MCP服务管理"),
+              subtitle: const Text("AI\u5de5\u5177AI工具集成服务配置"),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const McpServerPage())),
+            ),
+          ]),
+
           ]),
         ],
       ),

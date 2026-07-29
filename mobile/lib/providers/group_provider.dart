@@ -80,7 +80,9 @@ class GroupListNotifier extends StateNotifier<List<GroupModel>> {
     required int groupId,
     required String stockCode,
   }) async {
-    return _api.addStockToGroup(groupId: groupId, stockCode: stockCode);
+    final success = await _api.addStockToGroup(groupId: groupId, stockCode: stockCode);
+    if (success) await load();
+    return success;
   }
 
   /// 从分组移除股票
@@ -88,7 +90,9 @@ class GroupListNotifier extends StateNotifier<List<GroupModel>> {
     required int groupId,
     required String stockCode,
   }) async {
-    return _api.removeStockFromGroup(groupId: groupId, stockCode: stockCode);
+    final success = await _api.removeStockFromGroup(groupId: groupId, stockCode: stockCode);
+    if (success) await load();
+    return success;
   }
 }
 

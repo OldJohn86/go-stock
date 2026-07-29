@@ -6,6 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../api/api_client.dart';
+import 'ai_config_page.dart';
+import 'ai_recommend_stocks_page.dart';
+import 'ai_report_page.dart';
+import 'kline_pattern_page.dart';
+import 'stock_screener_page.dart';
 
 /// AI 模型配置
 class _AiModelConfig {
@@ -275,6 +280,8 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
               ],
             ),
           ),
+          // AI 子标签栏
+          _buildAiSubTabs(theme, colorScheme),
           // 当前模型指示条
           if (_selectedModel != null) _buildModelIndicator(colorScheme),
           // 消息列表
@@ -316,6 +323,68 @@ class _AiChatPageState extends ConsumerState<AiChatPage> {
       ),
     );
   }
+
+  Widget _buildAiSubTabs(ThemeData theme, ColorScheme cs) {
+    const tabs = [
+      ("对话", Icons.chat, null),
+      ("推荐", Icons.auto_awesome, AiRecommendStocksPage() as Widget?),
+      ("报告", Icons.description_outlined, AiReportPage() as Widget?),
+      ("配置", Icons.tune, AiConfigPage() as Widget?),
+      ("K线", Icons.auto_graph, KLinePatternPage() as Widget?),
+      ("筛选", Icons.filter_alt_outlined, StockScreenerPage() as Widget?),
+    ];
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+        children: [
+          for (final t in tabs)
+            if (t.$3 == null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(t.$2, size: 14, color: cs.primary),
+                    const SizedBox(width: 3),
+                    Text(t.$1, style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(6),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => t.$3!)),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(t.$2, size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 3),
+                          Text(t.$1, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+        ],
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildEmptyState(ThemeData theme) {
     return Center(

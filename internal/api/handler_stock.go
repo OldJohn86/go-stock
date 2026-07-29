@@ -2,10 +2,12 @@ package api
 
 import (
 	"strconv"
+	"strings"
 
 	"go-stock/backend/data"
 	"go-stock/backend/models"
 
+	"github.com/duke-git/lancet/v2/convertor"
 	"github.com/gin-gonic/gin"
 )
 
@@ -84,7 +86,7 @@ func HandleGetStockRealTimeBatch(c *gin.Context) {
 		// 也支持用逗号分隔传入单个 codes 参数
 		raw := c.Query("codes")
 		if raw != "" {
-			codes = []string{raw}
+			codes = strings.Split(raw, ",")
 		}
 	}
 	if len(codes) == 0 {
@@ -157,7 +159,7 @@ func HandleGetAllStocks(c *gin.Context) {
 	success(c, result)
 }
 
-// HandleGetFollowList 获取自选股列表
+// HandleGetFollowList 获取自选股列表（含实时行情）
 // GET /api/v1/follow/list?groupId=0
 func HandleGetFollowList(c *gin.Context) {
 	groupId, _ := strconv.Atoi(c.DefaultQuery("groupId", "0"))
@@ -168,7 +170,59 @@ func HandleGetFollowList(c *gin.Context) {
 		success(c, []interface{}{})
 		return
 	}
-	success(c, list)
+
+	// 补实时行情（替换 DB 中过时的价格数据）
+	var codes []string
+	for _, st := range *list {
+		codes = append(codes, st.StockCode)
+	}
+	priceMap := make(map[string]data.StockInfo)
+	if infos, err := api.GetStockCodeRealTimeData(codes...); err == nil && infos != nil {
+		for _, info := range *infos {
+			priceMap[strings.ToLower(info.Code)] = info
+		}
+	}
+
+	type followItem struct {
+		StockCode      string  `json:"股票代码"`
+		StockName     string  `json:"股票名称"`
+		Price         float64 `json:"当前价格"`
+		PreClose      float64 `json:"昨日收盘价"`
+		PriceChange   float64 `json:"价格变动"`
+		ChangePct    float64 `json:"涨跌幅"`
+		Volume       int64   `json:"成交的股票数"`
+		Time         string  `json:"时间"`
+		AlarmChangePct float64 `json:"alarm_change_percent"`
+		AlarmPrice   float64 `json:"alarm_price"`
+	}
+
+	result := make([]followItem, 0, len(*list))
+	for _, st := range *list {
+		item := followItem{
+			StockCode:      st.StockCode,
+			StockName:     st.Name,
+			Price:         st.Price,
+			Time:         st.Time.Format("15:04:05"),
+			AlarmChangePct: st.AlarmChangePercent,
+			AlarmPrice:   st.AlarmPrice,
+		}
+			lookup := data.ConvertTushareCodeToStockCode(st.StockCode)
+		if rt, ok := priceMap[strings.ToLower(lookup)]; ok {
+			price, _ := convertor.ToFloat(rt.Price)
+			if price > 0 {
+				item.Price = price
+				preClose, _ := convertor.ToFloat(rt.PreClose)
+				item.PreClose = preClose
+				item.PriceChange = price - preClose
+				if preClose > 0 {
+					item.ChangePct = (price - preClose) / preClose * 100
+				}
+			}
+		}
+		result = append(result, item)
+	}
+
+	success(c, result)
 }
 
 // HandleFollowStock 关注股票（加入自选）

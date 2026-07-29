@@ -8,7 +8,13 @@ import '../models/trading_record.dart';
 import '../models/stock_info.dart';
 import '../widgets/skeleton.dart';
 import '../widgets/trading_charts.dart';
+import 'alert_setting_page.dart';
+import 'backtest_page.dart';
+import 'dashboard_page.dart';
+import 'operation_plan_page.dart';
+import 'risk_control_page.dart';
 import 'stock_detail_page.dart';
+import 't0_trade_page.dart';
 
 /// 交易日志页
 class TradingRecordPage extends ConsumerStatefulWidget {
@@ -214,6 +220,8 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
               child: CustomScrollView(
                 controller: _scrollController,
                 slivers: [
+                  // 交易工具入口
+                  SliverToBoxAdapter(child: _buildTradingSubTabs(theme)),
                   // 统计卡片
                   if (_stats != null) SliverToBoxAdapter(
                     child: _buildStatsCard(theme),
@@ -296,6 +304,68 @@ class _TradingRecordPageState extends ConsumerState<TradingRecordPage> {
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildTradingSubTabs(ThemeData theme) {
+    final cs = Theme.of(context).colorScheme;
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        children: [
+          _buildSubTab(theme, '记录', Icons.receipt_long, null, true, cs),
+          _buildSubTab(theme, '计划', Icons.assignment, const OperationPlanPage(), false, cs),
+          _buildSubTab(theme, '回测', Icons.analytics, const BacktestPage(), false, cs),
+          _buildSubTab(theme, '做T', Icons.swap_horiz, const T0TradePage(), false, cs),
+          _buildSubTab(theme, '风控', Icons.shield_outlined, const RiskControlPage(), false, cs),
+          _buildSubTab(theme, '预警', Icons.notifications_active, const AlertSettingPage(), false, cs),
+          _buildSubTab(theme, '仪表盘', Icons.dashboard, const DashboardPage(), false, cs),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubTab(ThemeData theme, String label, IconData icon, Widget? page, bool selected, ColorScheme cs) {
+    if (selected) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        decoration: BoxDecoration(
+          color: cs.primaryContainer,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: cs.primary),
+            const SizedBox(width: 3),
+            Text(label, style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(6),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page!)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: Colors.grey[600]),
+                const SizedBox(width: 3),
+                Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
