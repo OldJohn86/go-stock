@@ -9,10 +9,7 @@ import { addMonths, format ,parse} from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 const updateLog = ref('');
 const versionInfo = ref('');
-const icon = ref('https://raw.githubusercontent.com/ArvinLovegood/go-stock/master/build/appicon.png');
-const alipay =ref('https://github.com/ArvinLovegood/go-stock/raw/master/build/screenshot/alipay.jpg')
-const wxpay =ref('https://github.com/ArvinLovegood/go-stock/raw/master/build/screenshot/wxpay.jpg')
-const wxgzh =ref('https://github.com/ArvinLovegood/go-stock/raw/dev/build/screenshot/%E6%89%AB%E7%A0%81_%E6%90%9C%E7%B4%A2%E8%81%94%E5%90%88%E4%BC%A0%E6%92%AD%E6%A0%B7%E5%BC%8F-%E7%99%BD%E8%89%B2%E7%89%88.png')
+const icon = ref('https://raw.githubusercontent.com/OldJohn86/goldstock/master/build/appicon.png');
 const notify = useNotification()
 const vipLevel=ref("");
 const vipStartTime=ref("");
@@ -112,9 +109,6 @@ onMounted(() => {
     updateLog.value = res.content;
     versionInfo.value = res.version;
     icon.value = res.icon;
-    alipay.value=res.alipay;
-    wxpay.value=res.wxpay;
-    wxgzh.value=res.wxgzh;
 
     GetSponsorInfo().then((res) => {
       vipLevel.value = res.vipLevel;
@@ -233,10 +227,10 @@ EventsOn("updateNeedAdmin", (msg) => {
             <n-image width="100" :src="icon" />
             <h1>
               <n-badge v-if="!vipLevel"  :value="versionInfo" :offset="[80,10]"  type="success">
-                <n-gradient-text type="info" :size="50" >go-stock</n-gradient-text>
+                <n-gradient-text type="info" :size="50" >goldstock</n-gradient-text>
               </n-badge>
               <n-badge v-if="vipLevel"  :value="versionInfo" :offset="[70,10]"  type="success">
-                <n-gradient-text :type="expired?'error':'warning'" :size="50" >go-stock</n-gradient-text><n-tag :bordered="false" size="small" type="warning">VIP{{vipLevel}}</n-tag>
+                <n-gradient-text :type="expired?'error':'warning'" :size="50" >goldstock</n-gradient-text><n-tag :bordered="false" size="small" type="warning">VIP{{vipLevel}}</n-tag>
               </n-badge>
             </h1>
             <n-gradient-text  :type="expired?'error':'warning'" v-if="vipLevel" >vip到期时间：{{vipEndTime}}</n-gradient-text>
@@ -252,13 +246,13 @@ EventsOn("updateNeedAdmin", (msg) => {
                 <i style="color: crimson">本软件仅供学习研究目的，AI分析结果仅供参考，本软件不提供任何投资建议或决策，风险自担！</i>
               </p>
               <p>
-                欢迎点赞GitHub：<a href="https://github.com/ArvinLovegood/go-stock" target="_blank">go-stock</a><n-divider vertical />
-                <a href="https://github.com/ArvinLovegood/go-stock" target="_blank">GitHub</a><n-divider vertical />
-                <a href="https://github.com/ArvinLovegood/go-stock/issues" target="_blank">Issues</a><n-divider vertical />
-                <a href="https://github.com/ArvinLovegood/go-stock/releases" target="_blank">Releases</a><n-divider vertical />
+                欢迎点赞GitHub：<a href="https://github.com/OldJohn86/goldstock" target="_blank">goldstock</a><n-divider vertical />
+                <a href="https://github.com/OldJohn86/goldstock" target="_blank">GitHub</a><n-divider vertical />
+                <a href="https://github.com/OldJohn86/goldstock/issues" target="_blank">Issues</a><n-divider vertical />
+                <a href="https://github.com/OldJohn86/goldstock/releases" target="_blank">Releases</a><n-divider vertical />
               </p>
               <p v-if="updateLog">更新说明：{{updateLog}}</p>
-              <p>项目社区：<a href="https://go-stock.sparkmemory.top/" target="_blank">https://go-stock.sparkmemory.top/</a></p>
+              <p>项目社区：<a href="https://gs.lovelypets.cn/" target="_blank">https://gs.lovelypets.cn/</a></p>
               <p>QQ交流群：<a href="http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=0YQ8qD3exahsD4YLNhzQTWe5ssstWC89&authKey=usOMMRFtIQDC%2FYcatHYapcxQbJ7PwXPHK9OypTXWzNjAq%2FRVvQu9bj2lRgb%2BSZ3p&noverify=0&group_code=491605333" target="_blank">491605333</a></p>
             </div>
           </n-space>
@@ -280,26 +274,18 @@ EventsOn("updateNeedAdmin", (msg) => {
                   <n-td><s>赞助 18.8 RMB/月<br>赞助 120 RMB/年</s></n-td><n-td><s>vip1</s></n-td><n-td><s>💕 全部功能,软件自动更新(从CDN下载),更新快速便捷。AI配置指导，提示词参考等</s> <n-tag size="tiny" type="error">已停售，推荐VIP2</n-tag></n-td>
                 </n-tr>
                 <n-tr>
-                  <n-td>赞助 28.8 RMB/月<br>赞助 240 RMB/年</n-td><n-td>vip2</n-td><n-td>💕 vip0全部功能,启动时自动同步最近24小时市场资讯(包括外媒简讯)，go-stock Ai助手等(详询作者微信/QQ)💕</n-td>
+                  <n-td>赞助 28.8 RMB/月<br>赞助 240 RMB/年</n-td><n-td>vip2</n-td><n-td>💕 vip0全部功能,启动时自动同步最近24小时市场资讯(包括外媒简讯)，goldstock Ai助手等(详询作者微信/QQ)💕</n-td>
                 </n-tr>
                 <n-tr>
-                  <n-td>每月赞助 X RMB</n-td><n-td>vipX</n-td><n-td>🧩 更多计划，视go-stock开源项目发展情况而定...(承接GitHub项目README广告推广💖)</n-td>
+                  <n-td>每月赞助 X RMB</n-td><n-td>vipX</n-td><n-td>🧩 更多计划，视goldstock开源项目发展情况而定...(承接GitHub项目README广告推广💖)</n-td>
                 </n-tr>
               </n-tbody>
             </n-table>
           </n-flex>
           <n-divider title-placement="center">关于作者</n-divider>
           <n-space vertical>
-<!--            <h1>关于作者</h1>-->
-            <n-avatar width="100" src="https://avatars.githubusercontent.com/u/7401917?v=4" />
-            <h2><a href="https://github.com/ArvinLovegood" target="_blank">@ArvinLovegood</a></h2>
-            <p>一个热爱编程的小白，欢迎关注我的Github/微信公众号</p>
-            <n-image width="300" :src="wxgzh" />
-            <p>开源不易，如果觉得好用，可以请作者喝杯咖啡。</p>
-            <n-flex justify="center">
-              <n-image width="200" :src="alipay" />
-              <n-image width="200" :src="wxpay" />
-            </n-flex>
+            <h2><a href="https://github.com/OldJohn86" target="_blank">@OldJohn86</a></h2>
+            <p>欢迎关注我的 GitHub，一起完善 goldstock。</p>
           </n-space>
           <n-divider title-placement="center">鸣谢</n-divider>
           <div style="justify-self: center;text-align: left" >
@@ -325,43 +311,14 @@ EventsOn("updateNeedAdmin", (msg) => {
           </div>
           <n-divider title-placement="center">关于版权和技术支持申明</n-divider>
           <div style="justify-self: center;text-align: left" >
-            <p style="color: #FAA04A">如有问题，请先查看项目文档和微信公众号教程，如果问题依然存在，请优先加群（491605333）咨询。</p>
+            <p style="color: #FAA04A">如有问题，请先查看项目文档，如果问题依然存在，欢迎在 GitHub 提交 Issue 反馈。</p>
             <p>
-              如需软件商业授权或定制开发，请联系作者微信(备注 商业咨询)：ArvinLovegood
+              如需软件商业授权或定制开发，请通过 <a href="https://github.com/OldJohn86/goldstock/issues" target="_blank">GitHub Issues</a> 联系。
             </p>
             <n-divider/>
             <p>
               本软件基于开源技术构建，使用Wails、NaiveUI、Vue等开源项目。技术上如有问题，可以先向对应的开源社区请求帮助。
             </p>
-            <p>
-              开源不易，本人精力和时间有限，如确实需要一对一技术支持，<i style="color: crimson">请先赞助！</i>联系微信(备注 技术支持)：ArvinLovegood
-            </p>
-            <p style="color: #FAA04A">*加微信或者QQ时，请先备注或留言需求(如：<a href="#support">技术支持</a>，功能建议，商业咨询等，否则会被忽略)</p>
-            <n-table id="support">
-              <n-thead>
-                <n-tr>
-                  <n-th>技术支持方式</n-th><n-th>赞助(元)</n-th>
-                </n-tr>
-              </n-thead>
-              <n-tbody>
-                <n-tr>
-                  <n-td>
-                    加 QQ：506808970，微信：ArvinLovegood
-                  </n-td>
-                  <n-td>
-                    100/次
-                  </n-td>
-                </n-tr>
-                <n-tr>
-                  <n-td>
-                    长期技术支持（不限次数，新功能优先体验等）
-                  </n-td>
-                  <n-td>
-                    5000
-                  </n-td>
-                </n-tr>
-              </n-tbody>
-            </n-table>
           </div>
 
         </n-card>

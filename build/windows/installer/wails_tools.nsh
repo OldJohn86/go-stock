@@ -5,19 +5,19 @@
 !include "FileFunc.nsh"
 
 !ifndef INFO_PROJECTNAME
-    !define INFO_PROJECTNAME "go-stock"
+    !define INFO_PROJECTNAME "goldstock"
 !endif
 !ifndef INFO_COMPANYNAME
-    !define INFO_COMPANYNAME "sparkmemory"
+    !define INFO_COMPANYNAME "goldstock"
 !endif
 !ifndef INFO_PRODUCTNAME
-    !define INFO_PRODUCTNAME "go-stock"
+    !define INFO_PRODUCTNAME "goldstock"
 !endif
 !ifndef INFO_PRODUCTVERSION
     !define INFO_PRODUCTVERSION "1.0.0"
 !endif
 !ifndef INFO_COPYRIGHT
-    !define INFO_COPYRIGHT "Copyright#sparkmemory@163.com"
+    !define INFO_COPYRIGHT "Copyright goldstock"
 !endif
 !ifndef PRODUCT_EXECUTABLE
     !define PRODUCT_EXECUTABLE "${INFO_PROJECTNAME}.exe"

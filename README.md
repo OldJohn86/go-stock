@@ -1,10 +1,10 @@
-# go-stock : 基于大语言模型的AI赋能股票分析工具
-## ![go-stock](./build/appicon.png)
-![GitHub Release](https://img.shields.io/github/v/release/ArvinLovegood/go-stock?link=https%3A%2F%2Fgithub.com%2FArvinLovegood%2Fgo-stock%2Freleases&link=https%3A%2F%2Fgithub.com%2FArvinLovegood%2Fgo-stock%2Freleases)
-[![GitHub Repo stars](https://img.shields.io/github/stars/ArvinLovegood/go-stock?link=https%3A%2F%2Fgithub.com%2FArvinLovegood%2Fgo-stock)](https://github.com/ArvinLovegood/go-stock)
-[![star](https://gitee.com/arvinlovegood_admin/go-stock/badge/star.svg?theme=dark)](https://gitee.com/arvinlovegood_admin/go-stock)
+# goldstock : 基于大语言模型的AI赋能股票分析工具
+## ![goldstock](./build/appicon.png)
+![GitHub Release](https://img.shields.io/github/v/release/OldJohn86/goldstock?link=https%3A%2F%2Fgithub.com%2FOldJohn86%2Fgoldstock%2Freleases&link=https%3A%2F%2Fgithub.com%2FOldJohn86%2Fgoldstock%2Freleases)
+[![GitHub Repo stars](https://img.shields.io/github/stars/OldJohn86/goldstock?link=https%3A%2F%2Fgithub.com%2FOldJohn86%2Fgoldstock)](https://github.com/OldJohn86/goldstock)
+[![star](https://gitee.com/arvinlovegood_admin/goldstock/badge/star.svg?theme=dark)](https://gitee.com/arvinlovegood_admin/goldstock)
 
-[//]: # ([![star]&#40;https://gitcode.com/ArvinLovegood/go-stock/star/badge.svg&#41;]&#40;https://gitcode.com/ArvinLovegood/go-stock&#41;)
+[//]: # ([![star]&#40;https://gitcode.com/OldJohn86/goldstock/star/badge.svg&#41;]&#40;https://gitcode.com/OldJohn86/goldstock&#41;)
 
 [//]: # (## 💖 赞助商 &#40;Sponsors&#41;)
 
@@ -37,7 +37,7 @@
 
 [//]: # (<td width="180">)
 
-[//]: # (<a href="https://www.compshare.cn/?ytag=GPU_YY_YX_git_go-stock">)
+[//]: # (<a href="https://www.compshare.cn/?ytag=GPU_YY_YX_git_goldstock">)
 
 [//]: # (<img src="./build/screenshot/uclound.png" alt="UCloud" width="150">)
 
@@ -47,7 +47,7 @@
 
 [//]: # (<td>)
 
-[//]: # (感谢 <a href="https://www.compshare.cn/?ytag=GPU_YY_YX_git_go-stock">优云智算</a> 赞助了本项目！优云智算是UCloud旗下AI云平台，主打包月、按次的高性价比 国模Agent Plan套餐，同时提供官转稳定海外模型。支持接入 Claude Code、Codex 及 API 调用。支持企业高并发、7*24技术支持、自助开票。通过此链接注册的用户，可得免费5元平台体验金！        )
+[//]: # (感谢 <a href="https://www.compshare.cn/?ytag=GPU_YY_YX_git_goldstock">优云智算</a> 赞助了本项目！优云智算是UCloud旗下AI云平台，主打包月、按次的高性价比 国模Agent Plan套餐，同时提供官转稳定海外模型。支持接入 Claude Code、Codex 及 API 调用。支持企业高并发、7*24技术支持、自助开票。通过此链接注册的用户，可得免费5元平台体验金！        )
 
 [//]: # (</td>)
 
@@ -60,8 +60,8 @@
 
 ### 📈 交流群
 
-[//]: # (- QQ交流群2：[点击链接加入群聊【go-stock交流群2】：892666282]&#40;https://qm.qq.com/q/5mYiy6Yxh0&#41;)
-- QQ交流群：[点击链接加入群聊【go-stock交流群】：491605333(定期清理，随缘入群)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=0YQ8qD3exahsD4YLNhzQTWe5ssstWC89&authKey=usOMMRFtIQDC%2FYcatHYapcxQbJ7PwXPHK9OypTXWzNjAq%2FRVvQu9bj2lRgb%2BSZ3p&noverify=0&group_code=491605333)
+[//]: # (- QQ交流群2：[点击链接加入群聊【goldstock交流群2】：892666282]&#40;https://qm.qq.com/q/5mYiy6Yxh0&#41;)
+- QQ交流群：[点击链接加入群聊【goldstock交流群】：491605333(定期清理，随缘入群)](http://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=0YQ8qD3exahsD4YLNhzQTWe5ssstWC89&authKey=usOMMRFtIQDC%2FYcatHYapcxQbJ7PwXPHK9OypTXWzNjAq%2FRVvQu9bj2lRgb%2BSZ3p&noverify=0&group_code=491605333)
 - 硅基流动(siliconflow)，注册即送2000万Tokens，[注册链接](https://cloud.siliconflow.cn/i/foufCerk)
 
 
@@ -75,14 +75,14 @@
 - 开发环境主要基于Windows10+，其他平台未测试或功能受限。
 
 ### 📃 使用手册
-[go-stock使用手册](docs/go-stock使用手册.md)
+[goldstock使用手册](docs/goldstock使用手册.md)
 
 ### 📦 立即体验
-[//]: # (- 安装版：[go-stock-amd64-installer.exe]&#40;https://github.com/ArvinLovegood/go-stock/releases&#41;)
-- 绿色版：[go-stock-windows-amd64.exe](https://github.com/ArvinLovegood/go-stock/releases)
-- MACOS绿色版：[go-stock-darwin-universal](https://github.com/ArvinLovegood/go-stock/releases)
+[//]: # (- 安装版：[goldstock-amd64-installer.exe]&#40;https://github.com/OldJohn86/goldstock/releases&#41;)
+- 绿色版：[goldstock-windows-amd64.exe](https://github.com/OldJohn86/goldstock/releases)
+- MACOS绿色版：[goldstock-darwin-universal](https://github.com/OldJohn86/goldstock/releases)
 
-[//]: # (- MACOS安装版：[go-stock-darwin-universal.pkg]&#40;https://github.com/ArvinLovegood/go-stock/releases&#41;)
+[//]: # (- MACOS安装版：[goldstock-darwin-universal.pkg]&#40;https://github.com/OldJohn86/goldstock/releases&#41;)
 
 
 ### 💬 支持大模型/平台
@@ -117,8 +117,8 @@
 |:--------------------------------|----------------|:-------------------------------------------------------|
 | 每月 0 RMB	                       | vip0	          | 🌟 全部功能,软件自动更新(从GitHub下载),自行解决github平台网络问题。            |
 | ~~每月赞助 18.8 RMB<br>每年赞助 120 RMB~~		 | ~~vip1~~	          | ~~💕 全部功能,软件自动更新(从CDN下载),更新快速便捷。AI配置指导，提示词参考等~~ ⚠️ **已停售，推荐赞助 VIP2**            |
-| 每月赞助 28.8 RMB<br>每年赞助 240 RMB		 | vip2	          | 💕 VIP0全部功能,启动时自动同步最近24小时市场资讯(包括外媒简讯)，go-stock Ai助手等   |
-| 每月赞助 X RMB			                   | vipX	          | 🧩 更多计划，视go-stock开源项目发展情况而定...(承接GitHub项目README广告推广💖) |
+| 每月赞助 28.8 RMB<br>每年赞助 240 RMB		 | vip2	          | 💕 VIP0全部功能,启动时自动同步最近24小时市场资讯(包括外媒简讯)，goldstock Ai助手等   |
+| 每月赞助 X RMB			                   | vipX	          | 🧩 更多计划，视goldstock开源项目发展情况而定...(承接GitHub项目README广告推广💖) |
 
 ## 🧩 重大功能开发计划
 | 功能说明            | 状态 | 备注                                                                                                       |
@@ -139,7 +139,7 @@
 | 美股支持            | ✅  | 美股数据支持                                                                                                   |
 | 港股支持            | ✅  | 港股数据支持                                                                                                   |
 | 多轮对话            | ✅  | AI分析后可继续对话提问                                                                                             |
-| 自定义AI分析提问模板     | ✅  | 可配置的提问模板 [v2025.2.12.7-alpha](https://github.com/ArvinLovegood/go-stock/releases/tag/v2025.2.12.7-alpha) |
+| 自定义AI分析提问模板     | ✅  | 可配置的提问模板 [v2025.2.12.7-alpha](https://github.com/OldJohn86/goldstock/releases/tag/v2025.2.12.7-alpha) |
 | 不再强制依赖Chrome浏览器 | ✅  | 默认使用edge浏览器抓取新闻资讯                                                                                        |
 
 ## 👀 更新日志
@@ -201,7 +201,7 @@
 ### 2025.05.07 优化分时图的展示
 ### 2025.04.29 补全港股/美股基础数据，优化港股股价延迟问题，优化初始化逻辑
 ### 2025.04.25 市场资讯支持AI分析和总结：让AI帮你读市场！
-### 2025.04.24 新增市场行情模块：即时掌握全球市场行情资讯/动态，从此再也不用偷摸去各大财经网站啦。go-stock一键帮你搞定！
+### 2025.04.24 新增市场行情模块：即时掌握全球市场行情资讯/动态，从此再也不用偷摸去各大财经网站啦。goldstock一键帮你搞定！
 ### 2025.04.22 优化K线图展示，支持拉伸放大，看得更舒服啦！
 ### 2025.04.21 港股，美股K线数据获取优化
 ### 2025.04.01 优化部分设置选项，避免重启软件
@@ -218,10 +218,10 @@
 ### 2025.02.22 港股数据支持(目前有延迟)
 
 ### 2025.02.16 AI分析后可继续对话提问
-- [v2025.2.16.1-alpha](https://github.com/ArvinLovegood/go-stock/releases/tag/v2025.2.16.1-alpha)
+- [v2025.2.16.1-alpha](https://github.com/OldJohn86/goldstock/releases/tag/v2025.2.16.1-alpha)
 
 ### 2025.02.12 可配置的提问模板
-- [v2025.2.12.7-alpha](https://github.com/ArvinLovegood/go-stock/releases/tag/v2025.2.12.7-alpha)
+- [v2025.2.12.7-alpha](https://github.com/OldJohn86/goldstock/releases/tag/v2025.2.12.7-alpha)
 
 
 ## 🦄 重大更新
@@ -232,7 +232,7 @@
 ![img_1.png](build/screenshot/img15.png)
 - 2025.04.25 市场资讯支持AI分析和总结：让AI帮你读市场！
 ![img.png](img.png)
-- 2025.04.24 新增市场行情模块：即时掌握全球市场行情资讯/动态，从此再也不用偷摸去各大财经网站啦。go-stock一键帮你搞定！
+- 2025.04.24 新增市场行情模块：即时掌握全球市场行情资讯/动态，从此再也不用偷摸去各大财经网站啦。goldstock一键帮你搞定！
 ![img.png](build/screenshot/img13.png)
 ![img_13.png](build/screenshot/img_13.png)
 - ![img_14.png](build/screenshot/img_14.png)
@@ -265,11 +265,11 @@
 
 
 ## ⭐ Star History
-<a href="https://www.star-history.com/?repos=ArvinLovegood%2Fgo-stock&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=OldJohn86%2Fgoldstock&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=ArvinLovegood/go-stock&type=date&theme=dark&legend=top-left&sealed_token=v0N4_yMF24lv7OpfWCO3O1wo4Uwy0VjIsJ5qwwsIwEF4A56MdI6nHkqhEzkKymHUvmjlD78zvdwTfg2D0JMcQNt-_KyxVlg7QWPCgln7DXSB7yr2lyYp5g" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=ArvinLovegood/go-stock&type=date&legend=top-left&sealed_token=v0N4_yMF24lv7OpfWCO3O1wo4Uwy0VjIsJ5qwwsIwEF4A56MdI6nHkqhEzkKymHUvmjlD78zvdwTfg2D0JMcQNt-_KyxVlg7QWPCgln7DXSB7yr2lyYp5g" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=ArvinLovegood/go-stock&type=date&legend=top-left&sealed_token=v0N4_yMF24lv7OpfWCO3O1wo4Uwy0VjIsJ5qwwsIwEF4A56MdI6nHkqhEzkKymHUvmjlD78zvdwTfg2D0JMcQNt-_KyxVlg7QWPCgln7DXSB7yr2lyYp5g" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=OldJohn86/goldstock&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=OldJohn86/goldstock&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=OldJohn86/goldstock&type=date&legend=top-left" />
  </picture>
 </a>
 
@@ -278,15 +278,7 @@
 
 ## 🐳 关于技术支持申明
 - 本软件基于开源技术构建，使用Wails、NaiveUI、Vue、AI大模型等开源项目。 技术上如有问题，可以先向对应的开源社区请求帮助。
-- 开源不易，本人精力和时间有限，如需一对一技术支持，请先赞助。联系QQ(备注 技术支持)：506808970
-
-[//]: # (<img src="./build/wx.jpg" width="301px" height="402px" alt="ArvinLovegood">)
-
-
-| 技术支持方式                          | 赞助(元) | 
-|:--------------------------------|:-----:|
-| 加 QQ：506808970                  | 100/次 |
-| 长期技术支持（不限次数，新功能优先体验等）           | 5000  |                  
+- 如有问题或需要技术支持，欢迎在 [GitHub Issues](https://github.com/OldJohn86/goldstock/issues) 反馈。
 
 
 

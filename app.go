@@ -159,7 +159,7 @@ func (a *App) CheckDeviceBinding(token string, apiBase string) map[string]any {
 // 规避 macOS WKWebView 的 App Transport Security 对明文 HTTP 的限制，
 // 前端不应直接 fetch 远程广场接口。
 // method: GET/POST/PUT/DELETE
-// apiBase: 广场 API 根地址，如 http://go-stock.sparkmemory.top:1918/api
+// apiBase: 广场 API 根地址，如 http://gs.lovelypets.cn:1918/api
 // path: 接口路径，如 /auth/register
 // query: URL 查询参数，可为 nil；nil 值与空字符串会被跳过，与前端原 fetch 行为一致
 // body: 请求体 JSON 字符串，可为空
@@ -303,7 +303,7 @@ func (a *App) CheckUpdate(flag int) {
 		resp, err := data.SharedHTTPClient.R().
 			SetHeaders(githubApiHeaders).
 			SetResult(releaseVersion).
-			Get("https://api.github.com/repos/ArvinLovegood/go-stock/releases/latest")
+			Get("https://api.github.com/repos/OldJohn86/goldstock/releases/latest")
 		if err != nil {
 			logger.SugaredLogger.Errorf("get github release version error:%s", err.Error())
 			return
@@ -317,7 +317,7 @@ func (a *App) CheckUpdate(flag int) {
 		resp, err := data.SharedHTTPClient.R().
 			SetHeaders(githubApiHeaders).
 			SetResult(&releases).
-			Get("https://api.github.com/repos/ArvinLovegood/go-stock/releases")
+			Get("https://api.github.com/repos/OldJohn86/goldstock/releases")
 		if err != nil {
 			logger.SugaredLogger.Errorf("get github releases error:%s", err.Error())
 			return
@@ -358,7 +358,7 @@ func (a *App) CheckUpdate(flag int) {
 		tagResp, tagErr := data.SharedHTTPClient.R().
 			SetHeaders(githubApiHeaders).
 			SetResult(tag).
-			Get("https://api.github.com/repos/ArvinLovegood/go-stock/git/ref/tags/" + releaseVersion.TagName)
+			Get("https://api.github.com/repos/OldJohn86/goldstock/git/ref/tags/" + releaseVersion.TagName)
 		if tagErr == nil && tagResp.StatusCode() == 200 && tag.Object.Url != "" {
 			releaseVersion.Tag = *tag
 			commit := &models.Commit{}
@@ -380,14 +380,14 @@ func (a *App) CheckUpdate(flag int) {
 		assetName := ""
 		if IsWindows() {
 			if IsArm64() {
-				assetName = "go-stock-windows-arm64.exe"
+				assetName = "goldstock-windows-arm64.exe"
 			} else {
-				assetName = "go-stock-windows-amd64.exe"
+				assetName = "goldstock-windows-amd64.exe"
 			}
 		} else if IsMacOS() {
-			assetName = "go-stock-darwin-universal"
+			assetName = "goldstock-darwin-universal"
 		} else if IsLinux() {
-			assetName = "go-stock-linux-amd64"
+			assetName = "goldstock-linux-amd64"
 		}
 
 		for _, asset := range releaseVersion.Assets {
@@ -398,7 +398,7 @@ func (a *App) CheckUpdate(flag int) {
 		}
 
 		if downloadUrl == "" {
-			downloadUrl = fmt.Sprintf("https://github.com/ArvinLovegood/go-stock/releases/download/%s/%s", releaseVersion.TagName, assetName)
+			downloadUrl = fmt.Sprintf("https://github.com/OldJohn86/goldstock/releases/download/%s/%s", releaseVersion.TagName, assetName)
 		}
 
 		originalDownloadUrl := downloadUrl
@@ -443,7 +443,7 @@ func (a *App) CheckUpdate(flag int) {
 			"useProxy":   useProxy,
 		})
 
-		tmpFile, err := os.CreateTemp("", "go-stock-update-*.tmp")
+		tmpFile, err := os.CreateTemp("", "goldstock-update-*.tmp")
 		if err != nil {
 			logger.SugaredLogger.Errorf("create temp file error: %s", err.Error())
 			go runtime.EventsEmit(a.ctx, "updateDownloadFailed", map[string]any{
@@ -508,7 +508,7 @@ func (a *App) CheckUpdate(flag int) {
 			go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 				"time":    "新版本：" + releaseVersion.TagName,
 				"isRed":   true,
-				"source":  "go-stock",
+				"source":  "goldstock",
 				"content": commitMessage + "\n新版本下载失败(无法读取临时文件)。" + manualDownloadTip,
 			})
 			return
@@ -530,7 +530,7 @@ func (a *App) CheckUpdate(flag int) {
 			go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 				"time":    "新版本：" + releaseVersion.TagName,
 				"isRed":   true,
-				"source":  "go-stock",
+				"source":  "goldstock",
 				"content": "版本更新完成,下次重启软件生效.",
 			})
 		}
@@ -539,7 +539,7 @@ func (a *App) CheckUpdate(flag int) {
 			go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 				"time":    "当前版本：" + Version,
 				"isRed":   true,
-				"source":  "go-stock",
+				"source":  "goldstock",
 				"content": "当前版本无更新",
 			})
 		}
@@ -600,40 +600,40 @@ func (a *App) isVip(sponsorCode string, downloadUrl string, releaseVersion *mode
 		}
 
 		if IsWindows() {
-			winAssetName := "go-stock-windows-amd64.exe"
+			winAssetName := "goldstock-windows-amd64.exe"
 			if IsArm64() {
-				winAssetName = "go-stock-windows-arm64.exe"
+				winAssetName = "goldstock-windows-arm64.exe"
 			}
 			if isVip {
 				if a.SponsorInfo["winDownUrl"] == nil {
-					downloadUrl = fmt.Sprintf("https://gh.927223.xyz/https://github.com/ArvinLovegood/go-stock/releases/download/%s/%s", releaseVersion.TagName, winAssetName)
+					downloadUrl = fmt.Sprintf("https://gh.927223.xyz/https://github.com/OldJohn86/goldstock/releases/download/%s/%s", releaseVersion.TagName, winAssetName)
 				} else {
 					downloadUrl = a.SponsorInfo["winDownUrl"].(string)
 				}
 			} else {
-				downloadUrl = fmt.Sprintf("https://github.com/ArvinLovegood/go-stock/releases/download/%s/%s", releaseVersion.TagName, winAssetName)
+				downloadUrl = fmt.Sprintf("https://github.com/OldJohn86/goldstock/releases/download/%s/%s", releaseVersion.TagName, winAssetName)
 			}
 		}
 		if IsMacOS() {
 			if isVip {
 				if a.SponsorInfo["macDownUrl"] == nil {
-					downloadUrl = fmt.Sprintf("https://gh.927223.xyz/https://github.com/ArvinLovegood/go-stock/releases/download/%s/go-stock-darwin-universal", releaseVersion.TagName)
+					downloadUrl = fmt.Sprintf("https://gh.927223.xyz/https://github.com/OldJohn86/goldstock/releases/download/%s/goldstock-darwin-universal", releaseVersion.TagName)
 				} else {
 					downloadUrl = a.SponsorInfo["macDownUrl"].(string)
 				}
 			} else {
-				downloadUrl = fmt.Sprintf("https://github.com/ArvinLovegood/go-stock/releases/download/%s/go-stock-darwin-universal", releaseVersion.TagName)
+				downloadUrl = fmt.Sprintf("https://github.com/OldJohn86/goldstock/releases/download/%s/goldstock-darwin-universal", releaseVersion.TagName)
 			}
 		}
 		if IsLinux() {
 			if isVip {
 				if a.SponsorInfo["linuxDownUrl"] == nil {
-					downloadUrl = fmt.Sprintf("https://gh.927223.xyz/https://github.com/ArvinLovegood/go-stock/releases/download/%s/go-stock-linux-amd64", releaseVersion.TagName)
+					downloadUrl = fmt.Sprintf("https://gh.927223.xyz/https://github.com/OldJohn86/goldstock/releases/download/%s/goldstock-linux-amd64", releaseVersion.TagName)
 				} else {
 					downloadUrl = a.SponsorInfo["linuxDownUrl"].(string)
 				}
 			} else {
-				downloadUrl = fmt.Sprintf("https://github.com/ArvinLovegood/go-stock/releases/download/%s/go-stock-linux-amd64", releaseVersion.TagName)
+				downloadUrl = fmt.Sprintf("https://github.com/OldJohn86/goldstock/releases/download/%s/goldstock-linux-amd64", releaseVersion.TagName)
 			}
 		}
 
@@ -644,7 +644,7 @@ func (a *App) isVip(sponsorCode string, downloadUrl string, releaseVersion *mode
 func (a *App) syncNews() {
 	defer PanicHandler()
 	client := data.SharedHTTPClient
-	url := fmt.Sprintf("http://go-stock.sparkmemory.top:16666/FinancialNews/json?since=%d", time.Now().Add(-24*time.Hour).Unix())
+	url := fmt.Sprintf("http://gs.lovelypets.cn:16666/FinancialNews/json?since=%d", time.Now().Add(-24*time.Hour).Unix())
 	//logger.SugaredLogger.Infof("syncNews:%s", url)
 	resp, err := client.R().SetDoNotParseResponse(true).Get(url)
 	body := resp.RawBody()
@@ -1168,7 +1168,7 @@ func (a *App) NewsPush(news *[]models.Telegraph) {
 		} else {
 			go runtime.EventsEmit(a.ctx, "newsPush", telegraph)
 		}
-		//go data.NewAlertWindowsApi("go-stock", telegraph.Source+" "+telegraph.Time, telegraph.Content, string(icon)).SendNotification()
+		//go data.NewAlertWindowsApi("goldstock", telegraph.Source+" "+telegraph.Time, telegraph.Content, string(icon)).SendNotification()
 		//}
 	}
 }
@@ -1579,13 +1579,13 @@ func MonitorAiRecommendStockPrices(a *App) {
 				plainContent := fmt.Sprintf("%s(%s)\n当前价格: %.2f\n建议买入价: %.2f-%.2f",
 					aiStock.StockName, aiStock.StockCode, currentPrice, aiStock.RecommendBuyPriceMin, aiStock.RecommendBuyPriceMax)
 				if a.canSendAlert(buyAlertKey, 5*time.Minute) {
-					go data.NewAlertWindowsApi("go-stock价格预警", title, content, "").SendNotification()
+					go data.NewAlertWindowsApi("goldstock价格预警", title, content, "").SendNotification()
 					go data.NewDingDingAPI().SendToDingDing(title, content)
 					go data.NewFeishuAPI().SendToFeishu(title, content)
 					go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 						"time":    title,
 						"isRed":   true,
-						"source":  "go-stock",
+						"source":  "goldstock",
 						"content": plainContent,
 					})
 					a.updateAlertSentTime(buyAlertKey)
@@ -1612,13 +1612,13 @@ func MonitorAiRecommendStockPrices(a *App) {
 				plainContent := fmt.Sprintf("%s(%s)\n当前价格: %.2f\n建议止盈价: %.2f-%.2f",
 					aiStock.StockName, aiStock.StockCode, currentPrice, aiStock.RecommendStopProfitPriceMin, aiStock.RecommendStopProfitPriceMax)
 				if a.canSendAlert(profitAlertKey, 5*time.Minute) {
-					go data.NewAlertWindowsApi("go-stock价格预警", title, content, "").SendNotification()
+					go data.NewAlertWindowsApi("goldstock价格预警", title, content, "").SendNotification()
 					go data.NewDingDingAPI().SendToDingDing(title, content)
 					go data.NewFeishuAPI().SendToFeishu(title, content)
 					go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 						"time":    title,
 						"isRed":   true,
-						"source":  "go-stock",
+						"source":  "goldstock",
 						"content": plainContent,
 					})
 					a.updateAlertSentTime(profitAlertKey)
@@ -1646,13 +1646,13 @@ func MonitorAiRecommendStockPrices(a *App) {
 				plainContent := fmt.Sprintf("%s(%s)\n当前价格: %.2f\n建议止损价: %s",
 					aiStock.StockName, aiStock.StockCode, currentPrice, aiStock.RecommendStopLossPrice)
 				if a.canSendAlert(stopLossAlertKey, 5*time.Minute) {
-					go data.NewAlertWindowsApi("go-stock价格预警", title, content, "").SendNotification()
+					go data.NewAlertWindowsApi("goldstock价格预警", title, content, "").SendNotification()
 					go data.NewDingDingAPI().SendToDingDing(title, content)
 					go data.NewFeishuAPI().SendToFeishu(title, content)
 					go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 						"time":    title,
 						"isRed":   true,
-						"source":  "go-stock",
+						"source":  "goldstock",
 						"content": plainContent,
 					})
 					a.updateAlertSentTime(stopLossAlertKey)
@@ -1731,13 +1731,13 @@ func MonitorFollowedStockCostPrices(a *App) {
 				plainContent := fmt.Sprintf("%s(%s)\n当前价格: %.2f\n成本价: %.2f\n亏损: %.2f%%",
 					followedStock.Name, followedStock.StockCode, currentPrice, costPrice, dropPercent)
 				if a.canSendAlert(alertKey, 5*time.Minute) {
-					go data.NewAlertWindowsApi("go-stock价格预警", title, content, "").SendNotification()
+					go data.NewAlertWindowsApi("goldstock价格预警", title, content, "").SendNotification()
 					go data.NewDingDingAPI().SendToDingDing(title, content)
 					go data.NewFeishuAPI().SendToFeishu(title, content)
 					go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 						"time":    title,
 						"isRed":   true,
-						"source":  "go-stock",
+						"source":  "goldstock",
 						"content": plainContent,
 					})
 					a.updateAlertSentTime(alertKey)
@@ -2010,12 +2010,12 @@ func (a *App) SendDingDingMessageByType(message string, stockCode string, msgTyp
 	}
 	stockInfo := &data.StockInfo{}
 	db.Dao.Model(stockInfo).Where("code = ?", stockCode).First(stockInfo)
-	go data.NewAlertWindowsApi("go-stock消息通知", getMsgTypeName(msgType), GenNotificationMsg(stockInfo), "").SendNotification()
+	go data.NewAlertWindowsApi("goldstock消息通知", getMsgTypeName(msgType), GenNotificationMsg(stockInfo), "").SendNotification()
 
 	go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 		"time":    "📈 " + getMsgTypeName(msgType),
 		"isRed":   true,
-		"source":  "go-stock",
+		"source":  "goldstock",
 		"content": GenNotificationMsg(stockInfo),
 	})
 
@@ -2059,12 +2059,12 @@ func (a *App) SendFeishuMessageByType(message string, stockCode string, msgType 
 	}
 	stockInfo := &data.StockInfo{}
 	db.Dao.Model(stockInfo).Where("code = ?", stockCode).First(stockInfo)
-	go data.NewAlertWindowsApi("go-stock消息通知", getMsgTypeName(msgType), GenNotificationMsg(stockInfo), "").SendNotification()
+	go data.NewAlertWindowsApi("goldstock消息通知", getMsgTypeName(msgType), GenNotificationMsg(stockInfo), "").SendNotification()
 
 	go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 		"time":    "📈 " + getMsgTypeName(msgType),
 		"isRed":   true,
-		"source":  "go-stock",
+		"source":  "goldstock",
 		"content": GenNotificationMsg(stockInfo),
 	})
 
@@ -2331,7 +2331,7 @@ func (a *App) ExportConfig() string {
 }
 
 func (a *App) ShareAnalysis(stockCode, stockName string) string {
-	//http://go-stock.sparkmemory.top:16688/upload
+	//http://gs.lovelypets.cn:16688/upload
 	res := data.NewDeepSeekOpenAi(a.ctx, 0).GetAIResponseResult(stockCode)
 	if res != nil && len(res.Content) > 100 {
 		analysisTime := res.CreatedAt.Format("2006/01/02")
@@ -2341,7 +2341,7 @@ func (a *App) ShareAnalysis(stockCode, stockName string) string {
 			"stockCode":    stockCode,
 			"stockName":    stockName,
 			"analysisTime": analysisTime,
-		}).Post("http://go-stock.sparkmemory.top:16688/upload")
+		}).Post("http://gs.lovelypets.cn:16688/upload")
 		if err != nil {
 			return err.Error()
 		}
@@ -2381,7 +2381,7 @@ func (a *App) ShareText(text, title string) string {
 		"stockCode":    title,
 		"stockName":    title,
 		"analysisTime": analysisTime,
-	}).Post("http://go-stock.sparkmemory.top:16688/upload")
+	}).Post("http://gs.lovelypets.cn:16688/upload")
 	if err != nil {
 		return err.Error()
 	}
@@ -3998,7 +3998,7 @@ type FilesystemSkillInfo struct {
 
 // skillsDir 返回文件系统技能目录路径（与 agent.deepAgentRootDir 保持一致）。
 //
-// 使用可执行文件所在目录而非 os.Getwd()，确保无论从哪个工作目录启动 go-stock，
+// 使用可执行文件所在目录而非 os.Getwd()，确保无论从哪个工作目录启动 goldstock，
 // skills 目录都固定在程序所在目录下；可执行文件路径获取失败时降级到当前工作目录。
 func skillsDir() string {
 	if exePath, err := os.Executable(); err == nil && exePath != "" {

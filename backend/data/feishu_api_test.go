@@ -65,7 +65,7 @@ func TestFeishuMessageBuild(t *testing.T) {
 		Header: &FeishuHeader{
 			Title: FeishuHeaderText{
 				Tag:     "plain_text",
-				Content: "go-stock " + title,
+				Content: "goldstock " + title,
 			},
 		},
 		Body: FeishuCardBody{
@@ -98,7 +98,7 @@ func TestFeishuMessageBuild(t *testing.T) {
 	if gjson.Get(jsonStr, "card.header.title.tag").String() != "plain_text" {
 		t.Fatalf("header title tag mismatch: %s", jsonStr)
 	}
-	if gjson.Get(jsonStr, "card.header.title.content").String() != "go-stock "+title {
+	if gjson.Get(jsonStr, "card.header.title.content").String() != "goldstock "+title {
 		t.Fatalf("header title content mismatch: %s", jsonStr)
 	}
 	// 2.0 协议元素在 body.elements 中
@@ -166,7 +166,7 @@ func TestSendToFeishu(t *testing.T) {
 	if cfg == nil || strings.TrimSpace(cfg.FeishuRobot) == "" {
 		t.Skip("飞书机器人未配置，跳过集成测试")
 	}
-	text := "# 飞书机器人集成测试\n\n这是一条来自 go-stock 的测试消息。\n\n- 项目：go-stock\n- 时间：自动生成\n\n**投资有风险，入市需谨慎**"
+	text := "# 飞书机器人集成测试\n\n这是一条来自 goldstock 的测试消息。\n\n- 项目：goldstock\n- 时间：自动生成\n\n**投资有风险，入市需谨慎**"
 	result := NewFeishuAPI().SendToFeishu("测试", text)
 	t.Logf("send result: %s", result)
 }

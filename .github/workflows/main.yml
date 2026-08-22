@@ -24,19 +24,19 @@ jobs:
       fail-fast: false
       matrix:
         build:
-          - name: 'go-stock-windows-amd64.exe'
+          - name: 'goldstock-windows-amd64.exe'
             platform:  'windows/amd64'
             os: 'windows-latest'
-          - name: 'go-stock-windows-arm64.exe'
+          - name: 'goldstock-windows-arm64.exe'
             platform:  'windows/arm64'
             os: 'windows-latest'
-          - name: 'go-stock-darwin-universal'
+          - name: 'goldstock-darwin-universal'
             platform: 'darwin/universal'
             os: 'macos-latest'
-          - name: 'go-stock-darwin-intel'
+          - name: 'goldstock-darwin-intel'
             platform: 'darwin/amd64'
             os: 'macos-latest'
-          - name: 'go-stock-darwin-arm64'
+          - name: 'goldstock-darwin-arm64'
             platform: 'darwin/arm64'
             os: 'macos-latest'
 
@@ -71,7 +71,7 @@ jobs:
             echo "channel_label=Dev（开发版）" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build wails x go-stock
+      - name: Build wails x goldstock
         uses: ArvinLovegood/wails-build-action@v3.8
         id: build
         with:

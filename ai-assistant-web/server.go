@@ -51,7 +51,7 @@ func Start() error {
 	checkDir("data")
 	checkDir("logs")
 
-	// 当作为 go-stock 子组件启动时，db 可能已经初始化过。
+	// 当作为 goldstock 子组件启动时，db 可能已经初始化过。
 	if db.Dao == nil {
 		db.Init("")
 	}
@@ -108,9 +108,9 @@ func (a *app) vipStatus(w http.ResponseWriter, r *http.Request) {
 
 func vipDeniedMessage(level int, active bool) string {
 	if !active && level > 0 {
-		return "检测到赞助信息，但当前不在 VIP 有效期内或尚未到授权生效时间。请在 go-stock 客户端「关于」确认赞助状态。"
+		return "检测到赞助信息，但当前不在 VIP 有效期内或尚未到授权生效时间。请在 goldstock 客户端「关于」确认赞助状态。"
 	}
-	return "go-stock AI 助手（Web）仅对 VIP2 及以上有效赞助用户开放。请在 go-stock 桌面客户端「关于」页面填写赞助码后，使用与本机相同的 data 目录启动服务。"
+	return "goldstock AI 助手（Web）仅对 VIP2 及以上有效赞助用户开放。请在 goldstock 桌面客户端「关于」页面填写赞助码后，使用与本机相同的 data 目录启动服务。"
 }
 
 func requireVip2(w http.ResponseWriter) bool {
@@ -291,7 +291,7 @@ func (a *app) shareText(w http.ResponseWriter, r *http.Request) {
 		"stockCode":    req.Title,
 		"stockName":    req.Title,
 		"analysisTime": analysisTime,
-	}).Post("http://go-stock.sparkmemory.top:16688/upload")
+	}).Post("http://gs.lovelypets.cn:16688/upload")
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return

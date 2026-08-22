@@ -135,7 +135,7 @@ func TestIsMentionedToBot_OnlyUserMentions(t *testing.T) {
 // TestIsMentionedToBot_EmptyMentionedType 飞书实测场景：mentioned_type 字段为空
 func TestIsMentionedToBot_EmptyMentionedType(t *testing.T) {
 	mentions := []*larkim.MentionEvent{
-		{Key: strPtr("@_user_1"), Name: strPtr("go-stock AI")},
+		{Key: strPtr("@_user_1"), Name: strPtr("goldstock AI")},
 	}
 	assert.True(t, isMentionedToBot(mentions))
 }
@@ -210,7 +210,7 @@ func TestCollectAgentReply_OnlyReasoning(t *testing.T) {
 	ch := make(chan *schema.Message, 3)
 	// 模拟 GLM-5.2 等推理模型：content 字段始终为空，回复在 reasoning_content 中
 	ch <- &schema.Message{Role: schema.Assistant, Content: "", ReasoningContent: "你好！"}
-	ch <- &schema.Message{Role: schema.Assistant, Content: "", ReasoningContent: "我是 go-stock AI 助手"}
+	ch <- &schema.Message{Role: schema.Assistant, Content: "", ReasoningContent: "我是 goldstock AI 助手"}
 	close(ch)
 
 	got := collectAgentReply(ch)
@@ -258,7 +258,7 @@ func TestBuildReplyCard(t *testing.T) {
 	title, ok := header["title"].(map[string]interface{})
 	assert.True(t, ok)
 	assert.Equal(t, "plain_text", title["tag"])
-	assert.Contains(t, title["content"], "go-stock")
+	assert.Contains(t, title["content"], "goldstock")
 
 	// 验证 body.elements 包含 markdown 元素
 	body, ok := card["body"].(map[string]interface{})
@@ -626,7 +626,7 @@ func TestBuildReplyCardWithTitle_DefaultTitle(t *testing.T) {
 
 	header := card["header"].(map[string]interface{})
 	title := header["title"].(map[string]interface{})
-	assert.Equal(t, "go-stock AI 助手", title["content"])
+	assert.Equal(t, "goldstock AI 助手", title["content"])
 }
 
 // --- shouldReplyAsImage 测试 ---

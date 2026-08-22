@@ -181,11 +181,11 @@ func (a *App) sendPlanNotification(channels []string, title, content, plainConte
 	for _, ch := range channels {
 		switch ch {
 		case NotifyChannelApp:
-			go data.NewAlertWindowsApi("go-stock操作计划预警", title, content, "").SendNotification()
+			go data.NewAlertWindowsApi("goldstock操作计划预警", title, content, "").SendNotification()
 			go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 				"time":    title,
 				"isRed":   true,
-				"source":  "go-stock",
+				"source":  "goldstock",
 				"content": plainContent,
 			})
 		case NotifyChannelFeishu:
@@ -196,13 +196,13 @@ func (a *App) sendPlanNotification(channels []string, title, content, plainConte
 	}
 	if useAll {
 		// 未配置渠道时，全部发送
-		go data.NewAlertWindowsApi("go-stock操作计划预警", title, content, "").SendNotification()
+		go data.NewAlertWindowsApi("goldstock操作计划预警", title, content, "").SendNotification()
 		go data.NewFeishuAPI().SendToFeishu(title, content)
 		go data.NewDingDingAPI().SendToDingDing(title, content)
 		go runtime.EventsEmit(a.ctx, "newsPush", map[string]any{
 			"time":    title,
 			"isRed":   true,
-			"source":  "go-stock",
+			"source":  "goldstock",
 			"content": plainContent,
 		})
 	}

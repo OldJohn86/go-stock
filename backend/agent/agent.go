@@ -329,7 +329,7 @@ func splitStaticAndDynamicTools(allTools []tool.BaseTool) (staticTools, dynamicT
 //   - 保留 write_todos（任务规划）和 general-purpose 子代理（上下文隔离委派）。
 //   - 自定义股票工具与内置工具自动合并，无需排除内置工具名。
 func createDeepAgent(ctx context.Context, chatModel model.ToolCallingChatModel, allTools []tool.BaseTool, aiConfig data.AIConfig) (*Instance, error) {
-	// 文件系统沙箱根：可执行文件所在目录，桌面应用启动时即为 go-stock 根目录
+	// 文件系统沙箱根：可执行文件所在目录，桌面应用启动时即为 goldstock 根目录
 	rootDir := deepAgentRootDir()
 	fsBackend := tools.NewLocalFilesystemBackend(rootDir)
 	streamingShell := tools.NewLocalStreamingShell(rootDir, 60*time.Second)
@@ -552,7 +552,7 @@ func buildSummarizationMiddleware(ctx context.Context, chatModel model.BaseModel
 //
 // 默认使用可执行文件所在目录（os.Executable），保证 Agent 运行所产生的
 // 临时文件（如 logs/agent_transcript.md）与 skills 目录都落在程序所在目录，
-// 不受进程启动时工作目录（os.Getwd）影响——用户从任意目录启动 go-stock
+// 不受进程启动时工作目录（os.Getwd）影响——用户从任意目录启动 goldstock
 // 都会得到一致的沙箱根。若获取可执行文件路径失败，降级到当前工作目录。
 // 可通过环境变量 GO_STOCK_ROOT_DIR 覆盖（用于测试或指定部署目录）。
 func deepAgentRootDir() string {

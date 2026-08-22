@@ -153,7 +153,7 @@ function updateMarketStatus() {
     parts.push(hk ? '港股交易中' : '港股休市')
     parts.push(us ? '美股交易中' : '美股休市')
     marketStatus.value = parts.join(' | ')
-    WindowSetTitle("go-stock " + marketStatus.value + " " + officialStatement.value + "  「" + currentMotto.value + "」  [数据来源于网络，仅供参考；投资有风险，入市需谨慎]")
+    WindowSetTitle("goldstock " + marketStatus.value + " " + officialStatement.value + "  「" + currentMotto.value + "」  [数据来源于网络，仅供参考；投资有风险，入市需谨慎]")
   })
 }
 
@@ -1371,7 +1371,7 @@ onMounted(() => {
           content: () => h('div',{type:"info",style:{
             "text-align":"left",
               "font-size":"14px",
-              "color": data.source==="go-stock"?"#F98C24":"#549EC8"
+              "color": data.source==="goldstock"?"#F98C24":"#549EC8"
             }}, { default: () => data.content }),
           meta: () => h(NText,{type:"warning"}, { default: () => data.source}),
           duration:1000*30 ,
@@ -1390,7 +1390,7 @@ onMounted(() => {
       downloadNotification = notification.create({
         title: () => '正在下载新版本 ' + downloadState.value.version,
         content: renderDownloadContent,
-        meta: () => h(NText, { type: 'warning' }, { default: () => 'go-stock' }),
+        meta: () => h(NText, { type: 'warning' }, { default: () => 'goldstock' }),
         duration: 0,
       })
     })
@@ -1422,7 +1422,7 @@ onMounted(() => {
         title: '版本下载完成',
         content: () => h('div', { style: { 'text-align': 'left', 'font-size': '14px', 'color': '#52c41a' } },
           { default: () => '新版本 ' + data.version + ' 下载完成，正在应用更新，下次重启生效...' }),
-        meta: () => h(NText, { type: 'warning' }, { default: () => 'go-stock' }),
+        meta: () => h(NText, { type: 'warning' }, { default: () => 'goldstock' }),
         duration: 5000,
       })
     })
@@ -1447,7 +1447,7 @@ onMounted(() => {
         title: '版本下载失败',
         content: () => h('div', { style: { 'text-align': 'left', 'font-size': '14px', 'color': '#f67979' } },
           { default: () => items }),
-        meta: () => h(NText, { type: 'warning' }, { default: () => 'go-stock' }),
+        meta: () => h(NText, { type: 'warning' }, { default: () => 'goldstock' }),
         duration: 0,
       })
     })

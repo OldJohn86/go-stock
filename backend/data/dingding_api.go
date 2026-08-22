@@ -59,7 +59,7 @@ func (DingDingAPI) SendToDingDing(title, message string) string {
 		SetBody(&Message{
 			Msgtype: "markdown",
 			Markdown: Markdown{
-				Title: "go-stock " + title,
+				Title: "goldstock " + title,
 				Text:  message,
 			},
 			At: At{

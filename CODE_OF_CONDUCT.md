@@ -37,7 +37,7 @@
 
 ## 执行
 
-若发生滥用、骚扰或其他不可接受的行为，可向负责执行的社区领导者报告，邮箱地址为 [sparkmemory@163.com]。所有投诉都将得到及时、公正的审查和调查。
+若发生滥用、骚扰或其他不可接受的行为，可向负责执行的社区领导者报告，邮箱地址为 [351910898@qq.com]。所有投诉都将得到及时、公正的审查和调查。
 
 所有社区领导者都有义务尊重任何事件报告者的隐私和安全。
 
@@ -144,7 +144,7 @@ representative at an online or offline event.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at [sparkmemory@163.com].
+reported to the community leaders responsible for enforcement at [351910898@qq.com].
 All complaints will be reviewed and investigated promptly and fairly.
 
 All community leaders are obligated to respect the privacy and security of the

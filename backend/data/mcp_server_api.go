@@ -208,7 +208,7 @@ func InitMCPClient(ctx context.Context, server *models.MCPServer) (*client.Clien
 	initRequest := mcp.InitializeRequest{}
 	initRequest.Params.ProtocolVersion = mcp.LATEST_PROTOCOL_VERSION
 	initRequest.Params.ClientInfo = mcp.Implementation{
-		Name:    "go-stock",
+		Name:    "goldstock",
 		Version: "1.0.0",
 	}
 

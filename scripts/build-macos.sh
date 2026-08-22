@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# go-stock macOS 构建脚本
+# goldstock macOS 构建脚本
 # 此脚本需要在 macOS 环境下运行
 # 功能：检查依赖、构建应用、打包 DMG
 
@@ -14,7 +14,7 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 echo -e "${CYAN}======================================"
-echo -e "  go-stock macOS 构建脚本"
+echo -e "  goldstock macOS 构建脚本"
 echo -e "======================================${NC}"
 
 # 检查是否在 macOS 环境下运行
@@ -135,11 +135,11 @@ wails build --clean --platform "${PLATFORM}"
 echo -e "  ${GREEN}✓${NC} 应用构建完成"
 
 # 确认产物
-APP_PATH="build/bin/go-stock.app"
+APP_PATH="build/bin/goldstock.app"
 if [ ! -d "$APP_PATH" ]; then
     echo -e "${RED}  错误：未找到构建产物 ${APP_PATH}${NC}"
     # 尝试在子目录中查找
-    APP_PATH=$(find build/bin -name "go-stock.app" -type d 2>/dev/null | head -1)
+    APP_PATH=$(find build/bin -name "goldstock.app" -type d 2>/dev/null | head -1)
     if [ -z "$APP_PATH" ]; then
         echo -e "${RED}  构建失败，未生成 .app 包${NC}"
         exit 1
@@ -161,7 +161,7 @@ if command -v codesign &> /dev/null; then
     # 尝试使用开发者证书签名
     if security find-identity -v -p codesigning | grep -q "Developer ID"; then
         echo -e "  正在使用 Developer ID 签名..."
-        codesign --force --deep --sign "Developer ID Application: sparkmemory (TEAMID)" "${APP_PATH}" 2>/dev/null && ADHOC_SIGNED=true
+        codesign --force --deep --sign "Developer ID Application: goldstock (TEAMID)" "${APP_PATH}" 2>/dev/null && ADHOC_SIGNED=true
     fi
     
     # 如果没有开发者证书，尝试 ad-hoc 签名（仅移除"来自不明开发者"警告）
@@ -195,19 +195,19 @@ else
     SUFFIX="amd64"
 fi
 
-DMG_NAME="go-stock_${VERSION}_macos_${SUFFIX}.dmg"
+DMG_NAME="goldstock_${VERSION}_macos_${SUFFIX}.dmg"
 DMG_PATH="build/bin/${DMG_NAME}"
 
 # 创建临时目录用于 DMG 内容
 DMG_TMP_DIR=$(mktemp -d)
-DMG_APP_DIR="${DMG_TMP_DIR}/go-stock"
+DMG_APP_DIR="${DMG_TMP_DIR}/goldstock"
 mkdir -p "${DMG_APP_DIR}"
 
 # 复制 .app 到临时目录
 cp -R "${APP_PATH}" "${DMG_APP_DIR}/"
 
 # 移除复制后的 quarantine 属性（避免用户从 DMG 安装后无法运行）
-xattr -cr "${DMG_APP_DIR}/go-stock.app" 2>/dev/null || true
+xattr -cr "${DMG_APP_DIR}/goldstock.app" 2>/dev/null || true
 
 # 创建 Applications 快捷方式
 ln -s /Applications "${DMG_APP_DIR}/Applications"
@@ -215,7 +215,7 @@ ln -s /Applications "${DMG_APP_DIR}/Applications"
 # 创建 DMG
 echo -e "  正在创建 DMG: ${DMG_NAME}"
 hdiutil create \
-    -volname "go-stock" \
+    -volname "goldstock" \
     -srcfolder "${DMG_TMP_DIR}" \
     -ov \
     -format UDZO \
@@ -248,7 +248,7 @@ echo -e "    open ${APP_PATH}"
 echo -e ""
 echo -e "  方式2：从 DMG 安装"
 echo -e "    open ${DMG_PATH}"
-echo -e "    将 go-stock.app 拖到 Applications 文件夹"
+echo -e "    将 goldstock.app 拖到 Applications 文件夹"
 echo -e ""
 echo -e "${CYAN}签名说明：${NC}"
 echo -e "  构建脚本已执行以下操作："

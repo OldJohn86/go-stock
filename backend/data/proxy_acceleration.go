@@ -106,7 +106,7 @@ func TestProxySpeed(ctx context.Context, githubURL string, proxy string) (float6
 	if err != nil {
 		return 0, false
 	}
-	req.Header.Set("User-Agent", "go-stock-updater")
+	req.Header.Set("User-Agent", "goldstock-updater")
 	req.Header.Set("Range", fmt.Sprintf("bytes=0-%d", proxyTestBytes-1))
 
 	client := &http.Client{

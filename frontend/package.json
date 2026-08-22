@@ -1,5 +1,5 @@
 {
-  "name": "go-stock",
+  "name": "goldstock",
   "version": "1.0.0",
   "description": "",
   "main": "",
@@ -55,7 +55,7 @@
   },
   "keywords": [
     "AI赋能股票分析",
-    "go-stock"
+    "goldstock"
   ],
-  "author": "spark"
+  "author": "OldJohn86"
 }
