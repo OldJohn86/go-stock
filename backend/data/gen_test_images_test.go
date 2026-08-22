@@ -378,7 +378,7 @@ func TestGenerateAllTestImages(t *testing.T) {
 		t.Skip("跳过图片生成 (设置 GEN_IMAGES=1 启用)")
 	}
 
-	outputDir := `d:\项目\开源项目\go-stock\test`
+	outputDir := `d:\项目\开源项目\goldstock\test`
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		t.Fatalf("创建目录失败: %v", err)
 	}

@@ -3,14 +3,14 @@
 > 本次更新基于代码实现逐一核对了用户手册与 README 的功能描述，修正了与实际代码不符的硬数字、过时状态与缺失内容，使文档与当前版本（截至 2026.08.14）完全对齐。
 >
 > **涉及文件**：
-> - [docs/go-stock使用手册.md](./go-stock使用手册.md)（1672 行 → 1821 行，+149 行）
+> - [docs/goldstock使用手册.md](./goldstock使用手册.md)（1672 行 → 1821 行，+149 行）
 > - [README.md](../README.md)（269 行 → 295 行，+26 行）
 >
 > **核对依据**：前端 [market.vue](../frontend/src/components/market.vue)、[researchIndex.vue](../frontend/src/components/researchIndex.vue)、[ai-config-manager.vue](../frontend/src/components/ai-config-manager.vue) 与后端 [tool_groups.go](../backend/agent/tools/tool_groups.go) 的实际实现。
 
 ---
 
-## 一、用户手册变更（go-stock使用手册.md）
+## 一、用户手册变更（goldstock使用手册.md）
 
 ### 1. 新增章节
 

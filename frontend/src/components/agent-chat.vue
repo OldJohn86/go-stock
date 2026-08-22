@@ -108,7 +108,7 @@ let formatTimer = null
 const chatRef = ref(null);
 const isShowToBottom = ref(false);
 
-const icon = ref('https://raw.githubusercontent.com/ArvinLovegood/go-stock/master/build/appicon.png');
+const icon = ref('https://raw.githubusercontent.com/OldJohn86/goldstock/master/build/appicon.png');
 import {darkTheme, NFlex, NImage,NSelect} from "naive-ui";
 import {ChatWithAgent, GetAiConfigs, GetConfig, GetSponsorInfo, GetVersionInfo, SubmitAgentFeedback} from "../../wailsjs/go/main/App";
 import {models} from '../../wailsjs/go/models';

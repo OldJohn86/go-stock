@@ -9,13 +9,13 @@ import (
 	"testing"
 )
 
-// TestPrintExtractedTitles 打印 D:\go-stock\memory\2026-08-14 下所有 .md 文件的标题提取结果。
+// TestPrintExtractedTitles 打印 D:\goldstock\memory\2026-08-14 下所有 .md 文件的标题提取结果。
 // 模拟 ShareText 的完整标题解析优先级：
 //  1. 从 AI 回复正文提取（--- 包裹 # 标题 → 首个 # 标题 → 首行有效文本，跳过对话开头语）
 //  2. 提取失败 → 用用户提问（文件元数据 - **问题**: xxx）兜底
 //  3. 仍为空 → "AI助手"
 func TestPrintExtractedTitles(t *testing.T) {
-	dir := `D:\go-stock\memory\2026-08-14`
+	dir := `D:\goldstock\memory\2026-08-14`
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Skipf("目录不存在或无法访问: %v", err)

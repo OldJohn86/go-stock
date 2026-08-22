@@ -5,7 +5,7 @@
       v-if="showButton"
       :class="['edge-trigger', { 'edge-trigger-busy': hasBackgroundTask }]"
       @click="togglePanel"
-      :title="hasBackgroundTask ? 'go-stock AI 助手正在后台分析...' : 'go-stock AI 助手'"
+      :title="hasBackgroundTask ? 'goldstock AI 助手正在后台分析...' : 'goldstock AI 助手'"
     >
       <div class="edge-trigger-inner">
         <NIcon :component="ChatbubbleEllipsesOutline" size="22" />
@@ -27,7 +27,7 @@
         >
           <template #header>
             <div class="panel-header">
-              <span class="panel-title">go-stock AI 助手</span>
+              <span class="panel-title">goldstock AI 助手</span>
               <div class="panel-actions">
                 <NButton size="small" quaternary @click="startNewChat" title="开始新对话">
                   新对话
@@ -324,7 +324,7 @@ import html2canvas from 'html2canvas'
 
 const DEFAULT_VISIBLE_COUNT = 20
 const COLLAPSE_CHAR_LIMIT = 200
-const STORAGE_KEY_MODEL_ID = 'go-stock-ai-last-model-id'
+const STORAGE_KEY_MODEL_ID = 'goldstock-ai-last-model-id'
 
 const route = useRoute()
 // 注意：抽屉遮罩层 z-index 很高，使用全局 notification/message 可能被遮罩盖住。
@@ -528,7 +528,7 @@ async function exportAiReplyImage(displayFromIndex, index, evt) {
     const link = document.createElement('a')
     const safeTime = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')
     link.href = canvas.toDataURL('image/png')
-    link.download = `go-stock-ai-${safeTime}.png`
+    link.download = `goldstock-ai-${safeTime}.png`
     link.click()
     shareTipText.value = '已导出为 PNG 图片'
     shareTipVisible.value = true
@@ -659,7 +659,7 @@ function openPanel() {
     messages.value = [
       {
         role: 'assistant',
-        content: '我是 go-stock AI 助手，可随时在这里提问。支持股票、市场、投资等相关问题。',
+        content: '我是 goldstock AI 助手，可随时在这里提问。支持股票、市场、投资等相关问题。',
         reasoning: '',
         time: new Date().toLocaleString(),
         modelName: ''
@@ -693,7 +693,7 @@ async function togglePanel() {
     ensureSummaryEvent()
     await ensureVipInfo()
     if ((vipLevel.value ?? 0) < 2) {
-      message.warning('go-stock AI 助手功能仅对 VIP2 及以上赞助用户开放，请前往关于页面查看赞助方式。')
+      message.warning('goldstock AI 助手功能仅对 VIP2 及以上赞助用户开放，请前往关于页面查看赞助方式。')
       return
     }
     openPanel()

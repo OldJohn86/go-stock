@@ -1084,7 +1084,7 @@ async function exportKbqaAnswerImage() {
     const dataUrl = canvas.toDataURL('image/png')
     const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
     const safeTime = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')
-    const result = await SaveImage(`go-stock-kbqa-${safeTime}`, base64)
+    const result = await SaveImage(`goldstock-kbqa-${safeTime}`, base64)
     if (result && !result.includes('异常') && !result.includes('无法')) {
       message.success('已导出图片：' + result)
     } else {

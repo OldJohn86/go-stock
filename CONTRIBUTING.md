@@ -1,6 +1,6 @@
-# Contributing to [go-stock]
+# Contributing to [goldstock]
 
-感谢你对 [go-stock] 项目的兴趣并愿意贡献代码！本指南将帮助你了解如何为这个项目做出贡献。
+感谢你对 [goldstock] 项目的兴趣并愿意贡献代码！本指南将帮助你了解如何为这个项目做出贡献。
 
 ## 行为准则
 
@@ -9,7 +9,7 @@
 ## 贡献类型
 
 ### 报告问题
-如果你发现了一个 bug、有功能请求或者对项目有任何建议，请在项目的 [GitHub Issues](https://github.com/ArvinLovegood/go-stock/issues) 中创建一个新的 issue。在创建 issue 时，请提供尽可能多的信息，包括：
+如果你发现了一个 bug、有功能请求或者对项目有任何建议，请在项目的 [GitHub Issues](https://github.com/OldJohn86/goldstock/issues) 中创建一个新的 issue。在创建 issue 时，请提供尽可能多的信息，包括：
 - **问题描述**：清晰地描述你遇到的问题或建议的功能。
 - **重现步骤**：如果是 bug，请提供重现该问题的具体步骤。
 - **环境信息**：例如操作系统、编程语言版本等。
@@ -24,8 +24,8 @@
 #### 2. 克隆项目到本地
 使用以下命令将你 fork 的项目克隆到本地：
 ```bash
-git clone https://github.com/ArvinLovegood/go-stock.git
-cd go-stock
+git clone https://github.com/OldJohn86/goldstock.git
+cd goldstock
 ```
 
 #### 3. 创建新分支
@@ -50,7 +50,7 @@ git commit -m "描述你的更改，例如：修复了 #123 号 bug"
 #### 7. 同步上游仓库
 在推送代码之前，确保你的分支与上游仓库（原始项目）保持同步。
 ```bash
-git remote add upstream https://github.com/ArvinLovegood/go-stock.git
+git remote add upstream https://github.com/OldJohn86/goldstock.git
 git fetch upstream
 git rebase upstream/main
 ```

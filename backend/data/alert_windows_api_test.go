@@ -17,7 +17,7 @@ import (
 
 func TestAlert(t *testing.T) {
 	notification := toast.Notification{
-		AppID:    "go-stock",
+		AppID:    "goldstock",
 		Title:    "Hello, World!",
 		Message:  "This is a toast notification.",
 		Icon:     "../../build/appicon.png",

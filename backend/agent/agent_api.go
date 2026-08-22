@@ -223,7 +223,7 @@ func (receiver StockAiAgent) ChatWithContext(ctx context.Context, question strin
 		// 历史相关经验优先走向量检索（按当前问题语义召回 Top-K），向量库未就绪时降级到文件名扫描。
 		// 文件全部缺失时返回空字符串，不影响主流程。
 		sysPrompt += buildSelfEvolutionPrompt(deepAgentRootDir(), question)
-		// 注入项目级指令文件（.go-stock.md / AGENTS.md，递归向上查找）
+		// 注入项目级指令文件（.goldstock.md / AGENTS.md，递归向上查找）
 		// 与用户偏好（<exe_dir>/memory/user_profile.md），均可能为空。
 		sysPrompt += loadProjectInstructions("")
 		sysPrompt += loadUserProfile()

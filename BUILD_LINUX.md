@@ -1,6 +1,6 @@
-# go-stock Linux 构建指南
+# goldstock Linux 构建指南
 
-本文档说明如何在 Linux 平台上编译和运行 go-stock 应用程序。
+本文档说明如何在 Linux 平台上编译和运行 goldstock 应用程序。
 
 ## 系统要求
 
@@ -73,20 +73,20 @@ go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
 ```bash
 # 克隆项目
-git clone https://github.com/ArvinLovegood/go-stock.git
-cd go-stock
+git clone https://github.com/OldJohn86/goldstock.git
+cd goldstock
 
 # 运行构建脚本
 chmod +x scripts/build-linux.sh
 ./scripts/build-linux.sh
 ```
 
-构建完成后，可执行文件位于 `build/bin/linux/go-stock`
+构建完成后，可执行文件位于 `build/bin/linux/goldstock`
 
 ### 6. 运行应用
 
 ```bash
-./build/bin/linux/go-stock
+./build/bin/linux/goldstock
 ```
 
 ## 方法二：使用 Docker 构建
@@ -114,7 +114,7 @@ chmod +x scripts/docker-build-linux.sh
 docker run --rm -it \
     -e DISPLAY=$DISPLAY \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
-    go-stock-linux-builder
+    goldstock-linux-builder
 ```
 
 ## 方法三：使用 Wails 开发模式
@@ -184,25 +184,25 @@ mkdir -p AppDir/usr/share/applications
 mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
 
 # 复制文件
-cp build/bin/linux/go-stock AppDir/usr/bin/
-cp build/appicon.png AppDir/usr/share/icons/hicolor/256x256/apps/go-stock.png
+cp build/bin/linux/goldstock AppDir/usr/bin/
+cp build/appicon.png AppDir/usr/share/icons/hicolor/256x256/apps/goldstock.png
 
 # 创建 AppRun
 echo '#!/bin/bash
 DIR="$(dirname "$(readlink -f "${0}")")"
-exec "${DIR}/usr/bin/go-stock" "$@"' > AppDir/AppRun
+exec "${DIR}/usr/bin/goldstock" "$@"' > AppDir/AppRun
 chmod +x AppDir/AppRun
 
 # 创建 desktop 文件
 echo '[Desktop Entry]
 Type=Application
-Name=go-stock
-Exec=go-stock
-Icon=go-stock
-Categories=Finance;' > AppDir/usr/share/applications/go-stock.desktop
+Name=goldstock
+Exec=goldstock
+Icon=goldstock
+Categories=Finance;' > AppDir/usr/share/applications/goldstock.desktop
 
 # 生成 AppImage
-./appimagetool-x86_64.AppImage AppDir go-stock.AppImage
+./appimagetool-x86_64.AppImage AppDir goldstock.AppImage
 ```
 
 ### 创建 deb 包
@@ -212,39 +212,39 @@ Categories=Finance;' > AppDir/usr/share/applications/go-stock.desktop
 sudo apt-get install dpkg-dev
 
 # 创建 deb 包结构
-mkdir -p go-stock_DEBIAN
-mkdir -p go-stock/usr/bin
-mkdir -p go-stock/usr/share/applications
-mkdir -p go-stock/usr/share/icons/hicolor/256x256/apps
+mkdir -p goldstock_DEBIAN
+mkdir -p goldstock/usr/bin
+mkdir -p goldstock/usr/share/applications
+mkdir -p goldstock/usr/share/icons/hicolor/256x256/apps
 
 # 创建 control 文件
-echo 'Package: go-stock
+echo 'Package: goldstock
 Version: 1.0.0
 Architecture: amd64
-Maintainer: sparkmemory
+Maintainer: goldstock
 Depends: libgtk-3-0, libwebkit2gtk-4.0-37
-Description: AI 赋能股票分析软件' > go-stock_DEBIAN/control
+Description: AI 赋能股票分析软件' > goldstock_DEBIAN/control
 
 # 复制文件
-cp build/bin/linux/go-stock go-stock/usr/bin/
-cp build/appicon.png go-stock/usr/share/icons/hicolor/256x256/apps/go-stock.png
+cp build/bin/linux/goldstock goldstock/usr/bin/
+cp build/appicon.png goldstock/usr/share/icons/hicolor/256x256/apps/goldstock.png
 
 # 创建 desktop 文件
 echo '[Desktop Entry]
 Type=Application
-Name=go-stock
-Exec=/usr/bin/go-stock
-Icon=go-stock
-Categories=Finance;' > go-stock/usr/share/applications/go-stock.desktop
+Name=goldstock
+Exec=/usr/bin/goldstock
+Icon=goldstock
+Categories=Finance;' > goldstock/usr/share/applications/goldstock.desktop
 
 # 构建 deb 包
-dpkg-deb --build go-stock go-stock.deb
+dpkg-deb --build goldstock goldstock.deb
 ```
 
 ## 技术支持
 
 如有问题，请提交 Issue 至：
-https://github.com/ArvinLovegood/go-stock/issues
+https://github.com/OldJohn86/goldstock/issues
 
 ## 许可证
 

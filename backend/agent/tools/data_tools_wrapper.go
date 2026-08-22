@@ -1259,7 +1259,7 @@ func GetAllDataTools() []tool.BaseTool {
 		map[string]*schema.ParameterInfo{
 			"title": {
 				Type:     "string",
-				Desc:     "消息标题，会显示为「go-stock {title}」",
+				Desc:     "消息标题，会显示为「goldstock {title}」",
 				Required: true,
 			},
 			"message": {
@@ -1305,7 +1305,7 @@ func GetAllDataTools() []tool.BaseTool {
 		map[string]*schema.ParameterInfo{
 			"title": {
 				Type:     "string",
-				Desc:     "消息标题，会显示为卡片标题「go-stock {title}」",
+				Desc:     "消息标题，会显示为卡片标题「goldstock {title}」",
 				Required: true,
 			},
 			"message": {

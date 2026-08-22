@@ -80,7 +80,7 @@ func (f FeishuAPI) SendToFeishu(title, message string) string {
 		Header: &FeishuHeader{
 			Title: FeishuHeaderText{
 				Tag:     "plain_text",
-				Content: "go-stock " + title,
+				Content: "goldstock " + title,
 			},
 		},
 		Body: FeishuCardBody{

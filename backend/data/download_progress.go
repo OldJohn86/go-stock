@@ -85,7 +85,7 @@ func DownloadWithProgress(ctx context.Context, url string, tmpPath string, total
 	if err != nil {
 		return fmt.Errorf("创建请求失败: %w", err)
 	}
-	req.Header.Set("User-Agent", "go-stock-updater")
+	req.Header.Set("User-Agent", "goldstock-updater")
 
 	shared := GetSharedTransport()
 	transport := &http.Transport{

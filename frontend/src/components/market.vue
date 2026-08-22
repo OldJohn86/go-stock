@@ -45,7 +45,7 @@ import ConceptFundFlowChart from "./conceptFundFlowChart.vue";
 import RzrqRank from "./RzrqRank.vue";
 
 const route = useRoute()
-const icon = ref('https://raw.githubusercontent.com/ArvinLovegood/go-stock/master/build/appicon.png');
+const icon = ref('https://raw.githubusercontent.com/OldJohn86/goldstock/master/build/appicon.png');
 
 const message = useMessage()
 const notify = useNotification()

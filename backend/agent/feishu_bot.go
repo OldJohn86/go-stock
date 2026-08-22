@@ -590,7 +590,7 @@ func (b *FeishuBot) replyMessage(messageID, content string) error {
 
 	// 内容较小时直接发送单条卡片
 	if len(content) <= maxFeishuContentBytes {
-		return b.sendCardReply(messageID, content, "go-stock AI 助手")
+		return b.sendCardReply(messageID, content, "goldstock AI 助手")
 	}
 
 	// 内容过大时拆分为多条消息
@@ -599,9 +599,9 @@ func (b *FeishuBot) replyMessage(messageID, content string) error {
 		len(content), len(chunks))
 
 	for i, chunk := range chunks {
-		title := "go-stock AI 助手"
+		title := "goldstock AI 助手"
 		if len(chunks) > 1 {
-			title = fmt.Sprintf("go-stock AI 助手（%d/%d）", i+1, len(chunks))
+			title = fmt.Sprintf("goldstock AI 助手（%d/%d）", i+1, len(chunks))
 		}
 		if err := b.sendCardReply(messageID, chunk, title); err != nil {
 			return fmt.Errorf("reply chunk %d/%d failed: %w", i+1, len(chunks), err)
@@ -1020,10 +1020,10 @@ func collectAgentReply(ch chan *schema.Message) string {
 	return reply
 }
 
-// buildReplyCard 构造 interactive 卡片 JSON 2.0（默认标题 "go-stock AI 助手"）
+// buildReplyCard 构造 interactive 卡片 JSON 2.0（默认标题 "goldstock AI 助手"）
 // 文档：https://open.feishu.cn/document/feishu-cards/card-json-v2-components/content-components/rich-text
 func buildReplyCard(content string) string {
-	return buildReplyCardWithTitle(content, "go-stock AI 助手")
+	return buildReplyCardWithTitle(content, "goldstock AI 助手")
 }
 
 // buildReplyCardWithTitle 构造带自定义标题的 interactive 卡片 JSON 2.0

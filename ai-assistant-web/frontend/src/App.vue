@@ -6,11 +6,11 @@
   <div v-else-if="!vipGateOk" class="vip-gate vip-gate-denied">
     <div class="vip-gate-title">需要 VIP2 及以上</div>
     <p class="vip-gate-desc">{{ vipGateMessage }}</p>
-    <p class="vip-gate-hint">请使用已在「关于」页填写赞助码的 go-stock，并确保 Web 服务读取同一套 data 配置（默认工作目录下的 data 目录）。</p>
+    <p class="vip-gate-hint">请使用已在「关于」页填写赞助码的 goldstock，并确保 Web 服务读取同一套 data 配置（默认工作目录下的 data 目录）。</p>
   </div>
   <div v-else class="page">
         <div class="header">
-          <div class="title">go-stock AI 助手（Web）</div>
+          <div class="title">goldstock AI 助手（Web）</div>
           <div class="motto">「{{ currentMotto }}」</div>
           <div class="toolbar">
             <NButton size="small" type="primary" class="new-chat-btn" @click="startNewChat">
@@ -230,7 +230,7 @@ function refreshMotto() {
 const vipGateLoading = ref(true);
 const vipGateOk = ref(false);
 const vipGateMessage = ref(
-  "go-stock AI 助手（Web）仅对 VIP2 及以上有效赞助用户开放。请在 go-stock 桌面客户端「关于」页面填写赞助码。"
+  "goldstock AI 助手（Web）仅对 VIP2 及以上有效赞助用户开放。请在 goldstock 桌面客户端「关于」页面填写赞助码。"
 );
 
 const aiConfigId = ref<number | null>(null);
@@ -317,7 +317,7 @@ async function saveBubbleAsImage(msgIndex: number) {
 
     const link = document.createElement("a");
     const ts = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
-    link.download = `go-stock_ai_${ts}_msg_${msgIndex}.png`;
+    link.download = `goldstock_ai_${ts}_msg_${msgIndex}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
     message.success("图片已保存");
@@ -346,7 +346,7 @@ function startNewChat() {
   messages.value = [
     {
       role: "assistant",
-      content: "你好，我是 go-stock AI 助手（Web 版）。",
+      content: "你好，我是 goldstock AI 助手（Web 版）。",
       reasoning: "",
       time: nowText(),
     },

@@ -50,7 +50,7 @@ const (
 )
 
 // selfEvolutionMu 保护 .learnings/LEARNINGS.md 与 MEMORY.md 的并发写入。
-// go-stock 通常单会话使用，但飞书机器人等场景可能并发，加锁保险。
+// goldstock 通常单会话使用，但飞书机器人等场景可能并发，加锁保险。
 var selfEvolutionMu sync.Mutex
 
 // buildSelfEvolutionPrompt 组装自进化片段，注入到系统提示词末尾。

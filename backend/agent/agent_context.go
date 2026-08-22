@@ -39,11 +39,11 @@ func buildAgentTimeContext() string {
 	return sb.String()
 }
 
-// loadProjectInstructions 从工作目录递归向上查找项目指令文件（.go-stock.md 或 AGENTS.md），
+// loadProjectInstructions 从工作目录递归向上查找项目指令文件（.goldstock.md 或 AGENTS.md），
 // 合并多级指令内容后拼装到系统提示词。文件全部缺失时返回空字符串，不阻断主流程。
 //
 // 设计参考：Claude Code（CLAUDE.md 递归向上）、Cursor（.cursorrules）、OpenAI Codex（AGENTS.md）。
-// 优先级：同一目录下 .go-stock.md > AGENTS.md（只取一个）；越靠近当前目录优先级越高（放最后）。
+// 优先级：同一目录下 .goldstock.md > AGENTS.md（只取一个）；越靠近当前目录优先级越高（放最后）。
 // 查找深度上限为 5 层，避免在根目录意外命中系统级 AGENTS.md。
 func loadProjectInstructions(workDir string) string {
 	if workDir == "" {
@@ -60,7 +60,7 @@ func loadProjectInstructions(workDir string) string {
 
 	dir := workDir
 	for i := 0; i < maxDepth; i++ {
-		for _, name := range []string{".go-stock.md", "AGENTS.md"} {
+		for _, name := range []string{".goldstock.md", "AGENTS.md"} {
 			path := filepath.Join(dir, name)
 			abs, err := filepath.Abs(path)
 			if err != nil || seen[abs] {

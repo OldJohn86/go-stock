@@ -4,7 +4,7 @@
 # 此脚本需要在 Linux 环境下运行
 
 echo -e "======================================"
-echo -e "  go-stock Linux 构建脚本"
+echo -e "  goldstock Linux 构建脚本"
 echo -e "======================================"
 
 # 检查是否在 Linux 环境下运行
@@ -79,7 +79,7 @@ wails build --platform linux/amd64 --clean
 echo -e "\n======================================"
 echo -e "  构建完成!"
 echo -e "======================================"
-echo -e "\n  可执行文件位置：build/bin/linux/go-stock"
+echo -e "\n  可执行文件位置：build/bin/linux/goldstock"
 echo -e "\n运行方式:"
-echo -e "  ./build/bin/linux/go-stock"
+echo -e "  ./build/bin/linux/goldstock"
 echo -e "\n======================================"

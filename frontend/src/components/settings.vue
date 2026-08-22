@@ -232,11 +232,11 @@ function getHeight() {
 }
 
 function sendTestNotice() {
-  let markdown = "### go-stock test\n" + new Date()
+  let markdown = "### goldstock test\n" + new Date()
   let msg = '{' +
       '     "msgtype": "markdown",' +
       '     "markdown": {' +
-      '         "title":"go-stock' + new Date() + '",' +
+      '         "title":"goldstock' + new Date() + '",' +
       '         "text": "' + markdown + '"' +
       '     },' +
       '      "at": {' +
@@ -250,7 +250,7 @@ function sendTestNotice() {
 }
 
 function sendFeishuTestNotice() {
-  let markdown = "### go-stock 飞书测试\n" + new Date()
+  let markdown = "### goldstock 飞书测试\n" + new Date()
   // 飞书卡片 JSON 2.0 协议：schema="2.0" + body.elements + markdown 元素
   // 文档：https://open.feishu.cn/document/feishu-cards/card-json-v2-components/content-components/rich-text
   let msg = JSON.stringify({
@@ -260,7 +260,7 @@ function sendFeishuTestNotice() {
       header: {
         title: {
           tag: "plain_text",
-          content: "go-stock 飞书测试 " + new Date()
+          content: "goldstock 飞书测试 " + new Date()
         }
       },
       body: {
@@ -635,7 +635,7 @@ function deletePrompt(ID) {
             </n-form-item-gi>
 
             <n-form-item-gi :span="11" label="提示词广场地址：" path="promptPlazaApiBase">
-              <n-input type="text" placeholder="http://go-stock.sparkmemory.top:1918/api" v-model:value="formValue.promptPlazaApiBase" clearable/>
+              <n-input type="text" placeholder="http://gs.lovelypets.cn:1918/api" v-model:value="formValue.promptPlazaApiBase" clearable/>
               <n-tooltip placement="top">
                 <template #trigger>
                   <n-icon color="#0e7a0d" size="20">
@@ -646,7 +646,7 @@ function deletePrompt(ID) {
                   <n-gradient-text :type="'warning'">
                   <div style="max-width: 400px;text-align: left">
                     提示词广场服务接口地址<br>
-                    默认: http://go-stock.sparkmemory.top:1918/api<br>
+                    默认: http://gs.lovelypets.cn:1918/api<br>
                     如已部署提示词广场服务，可修改为实际地址
                   </div>
                   </n-gradient-text>

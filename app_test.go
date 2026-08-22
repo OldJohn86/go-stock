@@ -57,7 +57,7 @@ func TestUpdateCheck(t *testing.T) {
 		SetResult(releaseVersion).
 		SetHeader("Accept", "application/vnd.github+json").
 		SetHeader("X-GitHub-Api-Version", "2022-11-28").
-		Get("https://api.github.com/repos/ArvinLovegood/go-stock/releases/latest")
+		Get("https://api.github.com/repos/OldJohn86/goldstock/releases/latest")
 	//  https://api.github.com/repos/OWNER/REPO/releases/latest
 	if err != nil {
 		logger.SugaredLogger.Errorf("get github release version error:%s", err.Error())

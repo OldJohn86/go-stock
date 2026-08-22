@@ -486,7 +486,7 @@ const tabNavBgColor = computed(() => {
   return data.darkTheme ? 'rgb(16, 16, 20)' : '#ffffff'
 })
 
-const icon = ref('https://raw.githubusercontent.com/ArvinLovegood/go-stock/master/build/appicon.png');
+const icon = ref('https://raw.githubusercontent.com/OldJohn86/goldstock/master/build/appicon.png');
 
 const sortedResults = computed(() => {
   const sortedKeys = keys(results.value).sort();
@@ -2988,7 +2988,7 @@ function fullscreen() {
 function SendMessage(result, type) {
   let typeName = getTypeName(type)
   let img = 'http://image.sinajs.cn/newchart/min/n/' + result["股票代码"] + '.gif' + "?t=" + Date.now()
-  let markdown = "### go-stock [" + typeName + "]\n\n" +
+  let markdown = "### goldstock [" + typeName + "]\n\n" +
       "### " + result["股票名称"] + "(" + result["股票代码"] + ")\n" +
       "- 当前价格: " + result["当前价格"] + "  " + result.changePercent + "%\n" +
       "- 最高价: " + result["今日最高价"] + "  " + result.highRate + "\n" +
@@ -3342,9 +3342,9 @@ async function saveAsWord() {
          ${tipsHtml}
           </div>
 <br>
-本报告由go-stock项目生成：
+本报告由goldstock项目生成：
 <p>
-<a href="https://github.com/ArvinLovegood/go-stock">
+<a href="https://github.com/OldJohn86/goldstock">
 AI赋能股票分析：自选股行情获取，成本盈亏展示，涨跌报警推送，市场整体/个股情绪分析，K线技术指标分析等。数据全部保留在本地。支持DeepSeek，OpenAI， Ollama，LMStudio，AnythingLLM，硅基流动，火山方舟，阿里云百炼等平台或模型。
 </a></p>
 `

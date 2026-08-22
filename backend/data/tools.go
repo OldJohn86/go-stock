@@ -610,7 +610,7 @@ func Tools(tools []Tool) []Tool {
 				Properties: map[string]any{
 					"title": map[string]any{
 						"type":        "string",
-						"description": "消息标题，会显示为「go-stock {title}」",
+						"description": "消息标题，会显示为「goldstock {title}」",
 					},
 					"message": map[string]any{
 						"type":        "string",
@@ -632,7 +632,7 @@ func Tools(tools []Tool) []Tool {
 				Properties: map[string]any{
 					"title": map[string]any{
 						"type":        "string",
-						"description": "消息标题，会显示为卡片标题「go-stock {title}」",
+						"description": "消息标题，会显示为卡片标题「goldstock {title}」",
 					},
 					"message": map[string]any{
 						"type":        "string",

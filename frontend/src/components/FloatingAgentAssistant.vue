@@ -4,7 +4,7 @@
       v-if="showButton"
       :class="['edge-trigger', { 'edge-trigger-busy': hasBackgroundTask }]"
       @click="togglePanel"
-      :title="hasBackgroundTask ? 'go-stock AI Agent 助手正在后台分析...' : 'go-stock AI Agent 助手'"
+      :title="hasBackgroundTask ? 'goldstock AI Agent 助手正在后台分析...' : 'goldstock AI Agent 助手'"
     >
       <div class="edge-trigger-inner">
         <NIcon :component="SparklesOutline" size="18" />
@@ -26,7 +26,7 @@
         >
           <template #header>
             <div class="panel-header">
-              <span class="panel-title">go-stock AI Agent 助手</span>
+              <span class="panel-title">goldstock AI Agent 助手</span>
               <div class="panel-actions">
                 <NButton size="small" quaternary @click="startNewChat" title="开始新对话">
                   新对话
@@ -393,14 +393,14 @@ import 'md-editor-v3/lib/preview.css'
 import html2canvas from 'html2canvas'
 import StockLightweightKlineChart from './StockLightweightKlineChart.vue'
 
-const STORAGE_KEY_MODEL_ID = 'go-stock-agent-last-model-id'
-const STORAGE_KEY_SYS_PROMPT_ID = 'go-stock-agent-last-sys-prompt-id'
-const STORAGE_KEY_USER_PROMPT_ID = 'go-stock-agent-last-user-prompt-id'
-const STORAGE_KEY_THINKING_MODE = 'go-stock-agent-thinking-mode'
-const STORAGE_KEY_MEMORY_MODE = 'go-stock-agent-memory-mode'
-const STORAGE_KEY_MEMORY_COUNT = 'go-stock-agent-memory-count'
-const STORAGE_KEY_AGENT_MODE = 'go-stock-agent-mode'
-const STORAGE_KEY_SKILL_ID = 'go-stock-agent-skill-id'
+const STORAGE_KEY_MODEL_ID = 'goldstock-agent-last-model-id'
+const STORAGE_KEY_SYS_PROMPT_ID = 'goldstock-agent-last-sys-prompt-id'
+const STORAGE_KEY_USER_PROMPT_ID = 'goldstock-agent-last-user-prompt-id'
+const STORAGE_KEY_THINKING_MODE = 'goldstock-agent-thinking-mode'
+const STORAGE_KEY_MEMORY_MODE = 'goldstock-agent-memory-mode'
+const STORAGE_KEY_MEMORY_COUNT = 'goldstock-agent-memory-count'
+const STORAGE_KEY_AGENT_MODE = 'goldstock-agent-mode'
+const STORAGE_KEY_SKILL_ID = 'goldstock-agent-skill-id'
 
 // 从 localStorage 读取布尔值，默认 fallback
 function loadBool(key, fallback) {
@@ -1085,7 +1085,7 @@ async function exportAiReplyImage(assistantIndex, evt) {
     const dataUrl = canvas.toDataURL('image/png')
     const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
     const safeTime = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')
-    const result = await SaveImage(`go-stock-agent-${safeTime}`, base64)
+    const result = await SaveImage(`goldstock-agent-${safeTime}`, base64)
     if (result && !result.includes('异常') && !result.includes('无法')) {
       shareTipText.value = '已导出为 PNG 图片：' + result
     } else {
@@ -1174,7 +1174,7 @@ function openPanel() {
     messages.value = [
       {
         role: 'assistant',
-        content: '我是 go-stock AI Agent 助手，可以帮您分析股票、查询市场数据、获取研究报告等。请问有什么可以帮您的？',
+        content: '我是 goldstock AI Agent 助手，可以帮您分析股票、查询市场数据、获取研究报告等。请问有什么可以帮您的？',
         time: new Date().toLocaleString(),
         modelName: '',
         reasoning: ''
@@ -1212,7 +1212,7 @@ async function togglePanel() {
   if (!panelVisible.value) {
     await ensureVipInfo()
     if ((vipLevel.value ?? 0) < 2) {
-      message.warning('go-stock AI Agent 助手功能仅对 VIP2 及以上赞助用户开放，请前往关于页面查看赞助方式。')
+      message.warning('goldstock AI Agent 助手功能仅对 VIP2 及以上赞助用户开放，请前往关于页面查看赞助方式。')
       return
     }
     openPanel()

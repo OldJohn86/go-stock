@@ -9,7 +9,7 @@ import (
 
 // applyHiddenWindow 在 Windows 平台隐藏子进程控制台窗口。
 //
-// 背景：go-stock 为 Wails GUI 应用（无控制台宿主）。当通过 exec.Command 启动
+// 背景：goldstock 为 Wails GUI 应用（无控制台宿主）。当通过 exec.Command 启动
 // powershell.exe 等控制台子进程时，Windows 会自动为子进程分配一个新的控制台
 // 窗口，导致 Agent 执行 execute 工具时弹出可见的 PowerShell 窗口，干扰用户。
 //
