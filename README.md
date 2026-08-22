@@ -1,3 +1,6 @@
+> ⚠️ **本仓库已废弃 / DEPRECATED**
+> 正式项目已迁移至 **[OldJohn86/goldstock](https://github.com/OldJohn86/goldstock)**（产品名「简道」），请前往该仓库获取最新版本与后续更新。本仓库仅作历史归档，不再维护。
+
 # goldstock : 基于大语言模型的AI赋能股票分析工具
 ## ![goldstock](./build/appicon.png)
 ![GitHub Release](https://img.shields.io/github/v/release/OldJohn86/goldstock?link=https%3A%2F%2Fgithub.com%2FOldJohn86%2Fgoldstock%2Freleases&link=https%3A%2F%2Fgithub.com%2FOldJohn86%2Fgoldstock%2Freleases)
